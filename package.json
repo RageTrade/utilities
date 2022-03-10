@@ -1,0 +1,14 @@
+{
+  "name": "ragetrade-arbitrage-bot",
+  "version": "1.0.0",
+  "description": "arbitrage perpetual positions between ragetrade and ftx",
+  "main": "index.ts",
+  "repository": "https://github.com/rage-trade/ragetrade-arbitrage-bot",
+  "author": "protodev-rage <protodev@rage.trade>",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@tsconfig/node17": "^1.0.0",
+    "typescript": "^4.6.2"
+  }
+}
