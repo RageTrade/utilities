@@ -6,7 +6,7 @@ import {
   PRE_FLIGHT_CHECK,
 } from '../config'
 
-import { Side, LiquidityInfo, NetRagePosition } from '../../types'
+import { Side, NetRagePosition } from '../../types'
 
 import {
   Wallet,

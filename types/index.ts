@@ -29,7 +29,3 @@ export interface NetFtxPosition {
   lastTradedFundingRate: BigNumberish
 }
 
-export interface LiquidityInfo {
-  tick: number,
-  liquidity: BigNumberish
-}
