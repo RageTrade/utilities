@@ -111,10 +111,10 @@ export default class RageTrade {
   private async _preFlightChecks() {
     let checks = false
 
-    ;(await this.wallet.getBalance()).toBigInt() <
-    this.preFlightCheck.ARB_ETH_BAL_THRESHOLD
-      ? (checks = true)
-      : null
+      ; (await this.wallet.getBalance()).toBigInt() <
+        this.preFlightCheck.ARB_ETH_BAL_THRESHOLD
+        ? (checks = true)
+        : null
 
     const accInfo = await this.contracts.clearingHouse.getAccountInfo(
       this.ammConfig.ACCOUNT_ID
@@ -124,7 +124,7 @@ export default class RageTrade {
 
     if (accInfo.collateralDeposits.length) {
       accInfo.collateralDeposits[0].balance.toBigInt() <
-      this.preFlightCheck.RAGETRADE_BAL_THRESHOLD
+        this.preFlightCheck.RAGETRADE_BAL_THRESHOLD
         ? (checks = true)
         : null
     } else {
@@ -328,11 +328,12 @@ export default class RageTrade {
 
     let quoteUsed = BigInt(0)
 
-    for (let i = 0; i < nTicks; i++) {
+    for (let i = 0; i < (nTicks - 1); i++) {
+
       quoteUsed += this.calculateQuoteUsed(
         Math.max(pRage, Number(currentTick)),
         Number(filteredTickPrices[i + 1]),
-        BigNumber.from(tickLiquidities[-1])
+        BigNumber.from(tickLiquidities[i]),
       ).toBigInt()
 
       currentTick = filteredTickPrices[i + 1]
@@ -362,14 +363,15 @@ export default class RageTrade {
       BigNumber.from(tickLiquidities[-1])
     ).toBigInt()
 
-    for (let i = 0; i < nTicks; i++) {
+    for (let i = 0; i < (nTicks - 1); i++) {
+
       baseUsed += this.calculateBaseUsed(
         Number(currentTick),
-        Math.max(pRage, Number(filteredTickPrices[-(i + 2)])),
-        BigNumber.from(tickLiquidities[-(i + 2)])
+        Math.max(Number(pFinal), Number(filteredTickPrices[-(i + 2)])),
+        BigNumber.from(tickLiquidities[-(i + 2)]),
       ).toBigInt()
 
-      currentTick = filteredTickPrices[i + 1]
+      currentTick = filteredTickPrices[-(i + 2)]
     }
 
     return baseUsed
