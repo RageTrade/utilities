@@ -224,7 +224,9 @@ export default class RageTrade {
   }
 
   private async _preTxnChecks() {
-
+    // account bal / adding
+    // funding rate
+    // margin ratio
   }
 
   private async _postTxnCalcs() {
