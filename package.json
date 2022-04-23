@@ -13,14 +13,14 @@
   },
   "devDependencies": {
     "@tsconfig/node17": "^1.0.0",
-    "@types/node": "^17.0.21",
+    "@types/node": "^17.0.25",
     "@types/node-fetch": "^2.6.1",
-    "node-fetch": "2",
-    "typescript": "^4.6.2"
+    "node-fetch": "3.2.3",
+    "typescript": "^4.6.3"
   },
   "dependencies": {
-    "@ragetrade/sdk": "^0.4.2",
+    "@ragetrade/sdk": "^0.7.9",
     "@uniswap/v3-sdk": "^3.8.2",
-    "ethers": "^5.6.0"
+    "ethers": "^5.6.4"
   }
 }
