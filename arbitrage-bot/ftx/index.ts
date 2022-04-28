@@ -1,12 +1,11 @@
 export default class Ftx {
-
-  constructor() { }
+  constructor() {}
 
   ftxConfig = {
-    ftxFee: 0
+    ftxFee: 0,
   }
 
   async queryFtxPrice() {
-    return 0;
+    return 0
   }
 }

@@ -11,23 +11,38 @@ const rageFee = rageTrade.ammConfig.FEE
 const ftxFee = ftx.ftxConfig.ftxFee
 
 const main = async () => {
-
   let pFtx = await ftx.queryFtxPrice()
   let pRage = await rageTrade.queryRagePrice()
 
-  const calculateSizeOfArbitrage = async (pRage: number, pFtx: number, pFinal: BigInt, tickPrices: BigInt[], tickLiquidities: BigInt[]) => {
+  const calculateSizeOfArbitrage = async (
+    pRage: number,
+    pFtx: number,
+    pFinal: BigInt,
+    tickPrices: BigInt[],
+    tickLiquidities: BigInt[]
+  ) => {
     if (pRage < pFtx) {
-      const size = await rageTrade.getQuoteAssetUsed(pRage, pFinal, tickPrices, tickLiquidities)
+      const size = await rageTrade.getQuoteAssetUsed(
+        pRage,
+        pFinal,
+        tickPrices,
+        tickLiquidities
+      )
       return {
         potentialArbSize: size,
-        arbAsset: 'USDC'
+        arbAsset: 'USDC',
       }
     }
 
-    const size = await rageTrade.getBaseAssetUsed(pRage, pFinal, tickPrices, tickLiquidities)
+    const size = await rageTrade.getBaseAssetUsed(
+      pRage,
+      pFinal,
+      tickPrices,
+      tickLiquidities
+    )
     return {
       potentialArbSize: size,
-      arbAsset: 'ETH'
+      arbAsset: 'ETH',
     }
   }
 
@@ -41,7 +56,7 @@ const main = async () => {
   ) => {
     let usdProfit
 
-    if (side = Side.SELL) {
+    if ((side = Side.SELL)) {
       const { output, price } = await rageTrade.simulateSwap(potentialArbSize)
       const ethPriceRecieved = price / potentialArbSize
       usdProfit = potentialArbSize * (ethPriceRecieved - pFtx * (1 + ftxFee))
@@ -59,7 +74,6 @@ const main = async () => {
   }
 
   const arbitrage = async () => {
-
     const pFinal = await calculateFinalPrice(pRage, pFtx, rageFee, ftxFee)
 
     if (isMovementWithinSpread(pRage, pFtx, pFinal) == true) {
@@ -67,20 +81,42 @@ const main = async () => {
       return
     }
 
-    const { tickPrices, tickLiquidities } = await rageTrade.queryRelevantUniV3Liquidity(pRage, pFinal)
+    const {
+      tickPrices,
+      tickLiquidities,
+    } = await rageTrade.queryRelevantUniV3Liquidity(pRage, pFinal)
 
-    let { potentialArbSize, arbAsset } = await calculateSizeOfArbitrage(pRage, pFtx, BigInt(pFinal), tickPrices, tickLiquidities)
+    let { potentialArbSize, arbAsset } = await calculateSizeOfArbitrage(
+      pRage,
+      pFtx,
+      BigInt(pFinal),
+      tickPrices,
+      tickLiquidities
+    )
 
-    let side;
-    arbAsset == 'ETH' ? side = Side.SELL : side = Side.BUY
+    let side
+    arbAsset == 'ETH' ? (side = Side.SELL) : (side = Side.BUY)
 
-    potentialArbSize = BigInt(await rageTrade.calculateMaxTradeSize(Number(potentialArbSize), side, pFtx, ftxFee))
+    potentialArbSize = BigInt(
+      await rageTrade.calculateMaxTradeSize(
+        Number(potentialArbSize),
+        side,
+        pFtx,
+        ftxFee
+      )
+    )
 
-    const potentialArbProfit = await calculateArbProfit(Number(potentialArbSize), pRage, pFtx, tickPrices, tickLiquidities, side)
+    const potentialArbProfit = await calculateArbProfit(
+      Number(potentialArbSize),
+      pRage,
+      pFtx,
+      tickPrices,
+      tickLiquidities,
+      side
+    )
 
     if (potentialArbProfit > rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT) {
       // executeTrade(potentialArbSize, arbAsset)
     }
   }
-
 }

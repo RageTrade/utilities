@@ -1,4 +1,4 @@
-import { BigNumber, BigNumberish } from "ethers"
+import { BigNumber, BigNumberish } from 'ethers'
 
 export enum Side {
   BUY,
@@ -28,4 +28,3 @@ export interface NetFtxPosition {
   lastUpdated: Date | BigNumberish
   lastTradedFundingRate: BigNumberish
 }
-

@@ -5,6 +5,11 @@
     "preserveConstEnums": true,
     "strictPropertyInitialization": false
   },
-  "include": ["src/**/*"],
+  "include": [
+    "arbitrage-bot/**/*",
+    "keeper-liquidation/**/*",
+    "scripts/**/*",
+    "vault-rebalance/**/*"
+  ],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

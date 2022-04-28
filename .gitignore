@@ -35,6 +35,8 @@ bower_components
 Thumbs.db
 
 # Ignore built ts files
-dist/**/*
+dist
 
+# config files
 src/config.ts
+config.ts
