@@ -1,0 +1,10 @@
+version: '3.4'
+services:
+  keeper-liquidation:
+    build:
+      context: .
+      target: keeper-liquidation
+  vault-rebalance:
+    build:
+      context: .
+      target: vault-rebalance
