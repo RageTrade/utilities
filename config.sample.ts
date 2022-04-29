@@ -8,12 +8,13 @@ export const PRE_FLIGHT_CHECK = {
 export const NETWORK_INF0 = {
   CHAIN_ID: 421611,
   WSS_RPC_URL: '',
+  PRIVATE_KEY: '',
+  ALCHEMY_API_KEY: '',
+  BLOCK_EXPLORER_API: '',
+  BLOCK_EXPLORER_URL: '',
   ARB_BOT_WEBHOOK_URL: '',
   REBALANCE_WEBHOOK_URL: '',
   LIQUIDATION_WEBHOOK_URL: '',
-  PRIVATE_KEY: '',
-  BLOCK_EXPLORER_URL: 'https://testnet.arbiscan.io/',
-  BLOCK_EXPLORER_API: '',
 }
 
 export const AMM_CONFIG = {
