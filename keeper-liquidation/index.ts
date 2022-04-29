@@ -89,7 +89,7 @@ const main = async () => {
   }
 }
 
-cron.schedule('*/1 * * * *', () => {
+cron.schedule('*/2 * * * *', () => {
   main()
     .then(() => console.log('RUN COMPLETE!'))
     .catch((error) => {

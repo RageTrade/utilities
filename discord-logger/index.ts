@@ -14,6 +14,3 @@ export const log = async (message: string, channel: string) => {
     headers: { 'Content-Type': 'application/json' },
   })
 }
-
-// log('test: keeper liquidation', 'LIQUIDATION')
-// log('test: vault rebalance, check tag : <@943817535613206528>', 'REBALANCE')

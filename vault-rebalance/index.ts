@@ -1,8 +1,8 @@
 import { ethers } from 'ethers'
-import { getContracts, getVaultContracts } from '@ragetrade/sdk'
+import { getVaultContracts } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
-import { NETWORK_INF0, AMM_CONFIG } from '../config'
+import { NETWORK_INF0 } from '../config'
 
 import cron from 'node-cron'
 
@@ -25,7 +25,6 @@ const rebalance = async () => {
   )
 
   if (isValidRebalance) {
-    await log('rebalance opportunity found...', 'REBALANCE')
     await vault.rebalance({
       gasLimit: 1_000_000,
     })
@@ -53,30 +52,27 @@ const closeTokenPosition = async () => {
 
   const vault = (await getVaultContracts(signer)).curveYieldStrategy
 
-  if (isReset) {
-    await log('reset is true, closing token position...', 'REBALANCE')
-    await closeTokenPosition()
-    await log('token position closed!', 'REBALANCE')
-  } else {
-    await log('reset is false, skipping...', 'REBALANCE')
-  }
+  await closeTokenPosition()
+  await log('token position closed!', 'REBALANCE')
 
   isReset = await vault.isReset()
   await log(`updated reset value is ${isReset} `, 'REBALANCE')
 }
 
-cron.schedule('*/2 * * * *', () => {
+cron.schedule('0 0 * * *', () => {
   rebalance()
-    .then(() => console.log('RUN COMPLETE!'))
+    .then(() => console.log('REBALANCE RUN COMPLETE!'))
     .catch((error) => {
       console.error(error)
       process.exit(1)
     })
 })
 
-cron.schedule('*/1 * * * *', () => {
+cron.schedule('*/28 * * * *', () => {
+  if (!isReset) return
+
   closeTokenPosition()
-    .then(() => console.log('RUN COMPLETE!'))
+    .then(() => console.log('CLOSE TOKEN POSITION RUN COMPLETE!'))
     .catch((error) => {
       console.error(error)
       process.exit(1)
