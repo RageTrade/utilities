@@ -8,7 +8,7 @@ const ftx = new Ftx()
 const rageTrade = new RageTrade()
 
 const rageFee = rageTrade.ammConfig.FEE
-const ftxFee = ftx.ftxConfig.ftxFee
+const ftxFee = ftx.takerFee
 
 const main = async () => {
   let pFtx = await ftx.queryFtxPrice()
@@ -80,6 +80,8 @@ const main = async () => {
       console.log('price movement is within spread')
       return
     }
+
+    // _netProfit()
 
     const {
       tickPrices,
