@@ -48,15 +48,23 @@ const main = async () => {
 
   const liquidateTraderPosition = async (accountId: number) => {
     if (await canLiquidate(accountId)) {
-      await clearingHouse
+      const tx = await clearingHouse
         .connect(signer)
         .liquidateTokenPosition(accountId, AMM_CONFIG.POOL_ID)
+      await tx.wait()
+
+      return tx.hash
     }
   }
 
   const liquidateLiquidityPosition = async (accountId: number) => {
     if (await canLiquidate(accountId)) {
-      await clearingHouse.connect(signer).liquidateLiquidityPositions(accountId)
+      const tx = await clearingHouse
+        .connect(signer)
+        .liquidateLiquidityPositions(accountId)
+      await tx.wait()
+
+      return tx.hash
     }
   }
 
@@ -67,16 +75,18 @@ const main = async () => {
       const hasLiqPos = await hasLiquiditiyPosition(id)
 
       if (hasLiqPos) {
-        await liquidateLiquidityPosition(id)
+        const tx = await liquidateLiquidityPosition(id)
         await log(
-          `liquidity position of account # ${id} liquidated!`,
+          `liquidity position of account # ${id} liquidated!
+          ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
           'LIQUIDATION'
         )
       }
       if (hasTradPos) {
-        await liquidateTraderPosition(id)
+        const tx = await liquidateTraderPosition(id)
         await log(
-          `trader position of account # ${id} liquidated!`,
+          `trader position of account # ${id} liquidated!,
+          ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
           'LIQUIDATION'
         )
       }

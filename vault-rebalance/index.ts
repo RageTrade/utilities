@@ -25,10 +25,13 @@ const rebalance = async () => {
   )
 
   if (isValidRebalance) {
-    await vault.rebalance({
-      gasLimit: 1_000_000,
-    })
-    await log('rebalanced!', 'REBALANCE')
+    const tx = await vault.rebalance()
+    await tx.wait()
+
+    await log(
+      `rebalanced! ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+      'REBALANCE'
+    )
   } else {
     await log(
       'not a valid rebalance condition, skipping rebalance...',
@@ -52,8 +55,13 @@ const closeTokenPosition = async () => {
 
   const vault = (await getVaultContracts(signer)).curveYieldStrategy
 
-  await closeTokenPosition()
-  await log('token position closed!', 'REBALANCE')
+  const tx = await vault.closeTokenPosition()
+  await tx.wait()
+
+  await log(
+    `token position closed! ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+    'REBALANCE'
+  )
 
   isReset = await vault.isReset()
   await log(`updated reset value is ${isReset} `, 'REBALANCE')
