@@ -1,30 +1,15 @@
-import { BigNumber, BigNumberish } from 'ethers'
-
-export enum Side {
-  BUY,
-  SELL,
-}
-
-export interface Position {
-  tickUpper: number
-  tickLower: number
-  vTokenAmount: BigNumber
-}
+import { BigNumber } from 'ethers'
+import { OrderSide } from 'ftx-api'
 
 export interface NetRagePosition {
-  netSide: Side
-  netTokenPosition: Position
-  availableMargin: BigNumberish
-  accountMarketValue: BigNumberish
-  lastUpdated: Date | BigNumberish
-  lastTradedFundingRate: BigNumberish
+  availableMargin: BigNumber
+  netTraderPosition: BigNumber
+  accountMarketValue: BigNumber
 }
 
 export interface NetFtxPosition {
-  netSide: Side
-  availableMargin: BigNumberish
-  netTokenPosition: BigNumberish
-  accountMarketValue: BigNumberish
-  lastUpdated: Date | BigNumberish
-  lastTradedFundingRate: BigNumberish
+  netSide: OrderSide
+  availableMargin: Number
+  netTraderPosition: Number
+  accountMarketValue: Number
 }

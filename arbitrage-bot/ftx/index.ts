@@ -1,7 +1,6 @@
-import { BigNumber } from 'ethers'
 import { log } from '../../discord-logger'
-import { OrderSide, RestClient } from 'ftx-api'
 import { FTX_CONFIG, PRE_FLIGHT_CHECK } from '../../config'
+import { AccountSummary, FuturesPosition, OrderSide, RestClient } from 'ftx-api'
 
 export default class Ftx {
   private marketId
@@ -24,6 +23,10 @@ export default class Ftx {
     this.marketId = FTX_CONFIG.MARKET_ID
   }
 
+  async initialize() {
+    await this._preFlightChecks()
+  }
+
   private _scaleDown(size: number) {
     return size / FTX_CONFIG.SCALING_FACTOR
   }
@@ -32,60 +35,40 @@ export default class Ftx {
     return size * FTX_CONFIG.SCALING_FACTOR
   }
 
-  async _estimateFees(size: number, price: number): Promise<number> {
-    const now = Math.floor((new Date()).getTime() / 1000)
+  private async _estimateFundingFees(netSize: number, price: number) {
+    const now = Math.floor(new Date().getTime() / 1000)
 
     const fundingPayment = await this.ftxClient.getFundingPayments({
       start_time: now - 3600,
       end_time: now,
-      future: this.marketId
+      future: this.marketId,
     })
 
-    return (fundingPayment.result[0].rate * size * price) + (this.takerFee * size * price)
+    const totalFp = fundingPayment.result[0].rate * netSize * price
+
+    return totalFp
   }
 
-  async closePosition() {
+  async netProfit() {
+    if (!this.hasOpenPosition) {
+      return 0
+    }
+
     const position = await this.ftxClient.getPositions(true)
-    const side: OrderSide = position.result[0].side === 'buy' ? 'sell' : 'buy'
 
-    await this.ftxClient.placeOrder({
-      size: position.result[0].size,
-      side: side,
-      price: null,
-      type: 'market',
-      market: this.marketId,
-    })
+    const netSize = position.result[0].netSize
+    const avgOpenPrice = position.result[0].recentAverageOpenPrice!
 
-    this.hasOpenPosition = false
-  }
+    const currentPrice = await this.queryFtxPrice()
 
-  async _netProfit() {
-    // if (!this.hasOpenPosition) {
-    //   return 0
-    // }
+    const unrealizedPnl =
+      netSize * (currentPrice - avgOpenPrice) -
+      netSize * this.takerFee -
+      (await this._estimateFundingFees(netSize, currentPrice))
 
-    // open position size * ( current price - avgOpenPrice )
+    const scaled = this._scaleUp(unrealizedPnl)
 
-    // while (true) {
-    //   const position = await this.ftxClient.getPositions(true)
-    //   const scaled = this._scaleUp(position.result[0].unrealizedPnl)
-
-    //   const currentPrice = await this.queryFtxPrice()
-
-    //   console.log(position)
-
-    //   // console.log('currentPrice', currentPrice)
-    //   // console.log('netSize', position.result[0].netSize)
-    //   // console.log('entryPrice', position.result[0].entryPrice!)
-    //   // console.log('recentAverageOpenPrice', position.result[0].recentAverageOpenPrice!)
-
-    //   // console.log(position.result[0].netSize * (currentPrice - position.result[0].recentAverageOpenPrice!))
-    // }
-    
-    // const past = await this.ftxClient.getFuture()
-
-
-    // return scaled - await this._estimateFees(position.result[0].netSize, position.result[0].entryPrice!);
+    return scaled
   }
 
   async _preFlightChecks() {
@@ -98,21 +81,25 @@ export default class Ftx {
       accountInfo.result.marginFraction <
       PRE_FLIGHT_CHECK.FTX_MARGIN_RATIO_THRESHOLD
     ) {
-      console.log(
+      await log(
         `insufficient ftx margin fraction, available: ${accountInfo.result.marginFraction},
         required: ${PRE_FLIGHT_CHECK.FTX_MARGIN_RATIO_THRESHOLD}`,
         'ARB_BOT'
       )
+
+      throw new Error('pre flight check failed: insufficient margin ration')
     }
 
     if (
       accountInfo.result.freeCollateral < PRE_FLIGHT_CHECK.FTX_BALANCE_THRESHOLD
     ) {
-      console.log(
+      await log(
         `insufficient collateral balance on ftx, available: ${accountInfo.result.freeCollateral},
         required: ${PRE_FLIGHT_CHECK.FTX_BALANCE_THRESHOLD}`,
         'ARB_BOT'
       )
+
+      throw new Error('pre flight check failed: insufficient free collateral')
     }
 
     if (position.result.length > 0) {
@@ -123,20 +110,84 @@ export default class Ftx {
   }
 
   async queryFtxPrice() {
-    return (await this.ftxClient.getFuture(this.marketId) as any).result!.mark!
+    return ((await this.ftxClient.getFuture(this.marketId)) as any).result!
+      .mark!
   }
 
+  async simulatePostTrade(
+    size: number,
+    price: number,
+    side: OrderSide,
+    account: AccountSummary,
+    position: FuturesPosition
+  ) {
+    const updatedCost =
+      side === position.side
+        ? position.cost + size * price
+        : position.cost - size * price
+
+    if (updatedCost === 0) {
+      return {
+        oldMarginFraction: account.marginFraction,
+        newMarginFraction: Number.MAX_SAFE_INTEGER,
+      }
+    }
+
+    const newMarginFraction = account.totalAccountValue / Math.abs(updatedCost)
+
+    return {
+      oldMarginFraction: account.marginFraction,
+      newMarginFraction: newMarginFraction,
+    }
+  }
 
   async updatePosition(size: number, side: OrderSide) {
-    const out = await this.ftxClient.placeOrder({
-      size: size, //todo; add back scaling
+    const scaled = this._scaleDown(size)
+    const price = await this.queryFtxPrice()
+    const account = (await this.ftxClient.getAccount()).result
+
+    const {
+      oldMarginFraction,
+      newMarginFraction,
+    } = await this.simulatePostTrade(
+      scaled,
+      price,
+      side,
+      account,
+      account.positions[0]
+    )
+
+    if (newMarginFraction < 0.5) {
+      await log(
+        `add more margin to ftx, margin fraction below 0.5, 
+        margin fraction before: ${oldMarginFraction},
+        margin fraction after current trade: ${newMarginFraction}
+        `, 'ARB_BOT')
+    }
+
+    if (newMarginFraction < 0.25) {
+      await log(
+        `cannot take further position due to breach of max allowed margin fraction,
+        margin fraction before: ${oldMarginFraction},
+        margin fraction after current trade: ${newMarginFraction}     
+        `, 'ARB_BOT'
+      )
+      throw new Error(
+        'cannot take further position due to breach of max allowed margin fraction'
+      )
+    }
+
+    await this.ftxClient.placeOrder({
+      size: scaled,
       side: side,
       price: null,
       type: 'market',
       market: this.marketId,
     })
 
-    console.log(await this.ftxClient.getPositions(true))
+    const updatedPosition = await this.ftxClient.getPositions(true)
 
+    if (updatedPosition.result[0].netSize === 0) this.hasOpenPosition = false
+    return updatedPosition
   }
 }
