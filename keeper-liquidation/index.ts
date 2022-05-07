@@ -17,9 +17,7 @@ const main = async () => {
   const signer = new ethers.Wallet(NETWORK_INF0.PRIVATE_KEY, provider)
 
   const clearingHouse = (await getContracts(signer)).clearingHouse
-  const lastAccount = (await clearingHouse.callStatic.createAccount())
-    .sub(1)
-    .toNumber()
+  const lastAccount = (await clearingHouse.numAccounts()).sub(1).toNumber()
 
   const canLiquidate = async (accountId: number) => {
     const {
@@ -37,10 +35,7 @@ const main = async () => {
   const hasTraderPosition = async (accountId: number) => {
     const { tokenPositions } = await clearingHouse.getAccountInfo(accountId)
     if (tokenPositions.length > 0)
-      return (
-        tokenPositions[0].netTraderPosition.gt(0) &&
-        !tokenPositions[0].balance.isZero()
-      )
+      return !tokenPositions[0].netTraderPosition.isZero()
     return false
   }
 
