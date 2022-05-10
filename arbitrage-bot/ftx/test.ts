@@ -4,7 +4,7 @@ import { FTX_CONFIG } from '../../config'
 const ftx = new Ftx()
 
 async function main() {
-  await ftx.initialize()
+  // await ftx.initialize()
   // console.log(ftx.takerFee)
   // await ftx._preFlightChecks()
   // console.log(await ftx._estimateFees(0.0002, 2900))
@@ -17,9 +17,9 @@ async function main() {
   // )
 
   console.log(await ftx.queryFtxPosition())
-  console.log(await ftx.queryFtxAccount())
+  // console.log(await ftx.queryFtxAccount())
 
-  // console.log(await ftx.updatePosition(150, 'buy'))
+  // console.log(await ftx.updatePosition(0.093 * 1000, 'sell'))
 }
 
 main()

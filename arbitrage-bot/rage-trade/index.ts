@@ -140,6 +140,8 @@ export default class RageTrade {
     const price = await this.queryRagePrice()
     const positionCap = await this.getRagePositionCap()
 
+    console.log('positionCap', positionCap)
+
     let maxSize = 0;
 
     if (arbAsset === 'ETH') {
@@ -147,8 +149,10 @@ export default class RageTrade {
     }
 
     if (arbAsset === 'USDC') {
-      maxSize = Math.min(positionCap.maxShort * price, ftxEthPrice / 0.5)
+      maxSize = Math.min(positionCap.maxShort * price, ftxMargin / 0.5)
     }
+
+    console.log(`maxSize, ${arbAsset}`, maxSize)
 
     return Math.min(potentialArbSize, maxSize)
   }
@@ -224,23 +228,20 @@ export default class RageTrade {
     const currentPosition = tokenPositions[0].netTraderPosition || 0
     const currentPositionNotional = Number(formatEther(currentPosition.abs())) * price
 
-    const diff = (marketValueNotional / 0.5) - currentPositionNotional
+    // const diff = (marketValueNotional / 0.5) - currentPositionNotional
 
     let maxLong = 0, maxShort = 0;
 
     if (currentPosition.gt(0)) {
-      maxLong = diff
-      maxShort = marketValueNotional + (diff / 0.5)
+      maxLong = marketValueNotional / 0.5 - currentPositionNotional
+      maxShort = marketValueNotional / 0.5 + currentPositionNotional
     }
-
-    if (currentPosition.lt(0)) {
-      maxLong = marketValueNotional + (diff / 0.5)
-      maxShort = diff
-    }
-
-    if (currentPosition.eq(0)) {
-      maxLong = diff
-      maxShort = diff
+    else if (currentPosition.lt(0)) {
+      maxLong = marketValueNotional / 0.5 + currentPositionNotional
+      maxShort = marketValueNotional / 0.5 - currentPositionNotional
+    } else {
+      maxLong = marketValueNotional / 0.5
+      maxShort = marketValueNotional / 0.5
     }
 
     return {

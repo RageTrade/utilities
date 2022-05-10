@@ -27,6 +27,9 @@ const main = async () => {
   ) => {
     const { vQuoteIn, vTokenIn } = await rageTrade.getLiquidityInRange(pRage, pFinal)
 
+    console.log('vQuoteIn * ', vQuoteIn.toBigInt())
+    console.log('vTokenIn * ', vTokenIn.toBigInt())
+
     let liquidity = 0
     let symbol: 'ETH' | 'USDC' = 'ETH'
 
@@ -66,6 +69,7 @@ const main = async () => {
 
       console.log('potentialArbSize (from calc arb profit)', potentialArbSize)
 
+      // vQuoteIn - pAS * pFTX * (1 + ftxFee)
       usdProfit = potentialArbSize * (ethPriceReceived - pFtx * (1 + ftxFee))
 
       console.log('usdProfit', usdProfit)
@@ -126,6 +130,9 @@ const main = async () => {
 
       const ftxQuantity = arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pFtx
       const rageQuantity = arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pRage
+
+      console.log('ftxQuantity', ftxQuantity)
+      console.log('rageQuantity', rageQuantity)
 
       const x = await ftx.updatePosition(ftxQuantity, ftxSide)
       const y = await rageTrade.updatePosition(rageQuantity, rageSide)
