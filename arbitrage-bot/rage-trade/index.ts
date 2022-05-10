@@ -158,7 +158,7 @@ export default class RageTrade {
     return 1;
   }
 
-  async simulateSwap(potentialArbSize: number, isNotional: boolean) {
+  async simulateSwap(potentialArbSize: number, pFinal: number, isNotional: boolean) {
 
     let arbSize;
     isNotional ? arbSize = parseUsdc(potentialArbSize.toString())
@@ -290,7 +290,7 @@ export default class RageTrade {
 
   async updatePosition(size: number, side: OrderSide) {
 
-    const amount = side == 'buy' ? parseEther(size.toString()) : -parseEther(size.toString())
+    const amount = side == 'buy' ? parseEther(size.toString()) : parseEther((-1 * size).toString())
 
     const oldMarginFraction = await this._currentMarginFraction()
     const newMarginFraction = await this._simulatePostTrade(size, side)

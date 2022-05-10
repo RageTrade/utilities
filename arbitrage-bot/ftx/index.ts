@@ -78,8 +78,8 @@ export default class Ftx {
     ])
 
     if (
-      accountInfo.result.marginFraction <
-      PRE_FLIGHT_CHECK.FTX_MARGIN_RATIO_THRESHOLD
+      accountInfo.result.marginFraction < PRE_FLIGHT_CHECK.FTX_MARGIN_RATIO_THRESHOLD &&
+      accountInfo.result.marginFraction !== null
     ) {
       await log(
         `insufficient ftx margin fraction, available: ${accountInfo.result.marginFraction},
@@ -91,7 +91,8 @@ export default class Ftx {
     }
 
     if (
-      accountInfo.result.freeCollateral < PRE_FLIGHT_CHECK.FTX_BALANCE_THRESHOLD
+      accountInfo.result.freeCollateral < PRE_FLIGHT_CHECK.FTX_BALANCE_THRESHOLD && 
+      accountInfo.result.freeCollateral !== null
     ) {
       await log(
         `insufficient collateral balance on ftx, available: ${accountInfo.result.freeCollateral},
@@ -117,6 +118,16 @@ export default class Ftx {
   async queryFtxMargin() {
     const margin = (await this.ftxClient.getAccount()).result.totalAccountValue
     return this._scaleUp(margin)
+  }
+
+  async queryFtxPosition() {
+    const margin = (await this.ftxClient.getPositions(true)).result[0]
+    return margin
+  }
+
+  async queryFtxAccount() {
+    const margin = (await this.ftxClient.getAccount()).result
+    return margin
   }
 
   private async _simulatePostTrade(

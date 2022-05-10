@@ -1,10 +1,11 @@
 import Ftx from './ftx'
-import RageTrade from './rage-trade'
-import { formatUsdc } from '@ragetrade/sdk'
-import { formatEther } from 'ethers/lib/utils'
-import { isMovementWithinSpread, calculateFinalPrice } from './helpers'
-import { log } from '../discord-logger'
 import { OrderSide } from 'ftx-api'
+import RageTrade from './rage-trade'
+import { log } from '../discord-logger'
+import { NETWORK_INF0 } from '../config'
+import { formatUsdc } from '@ragetrade/sdk'
+import { formatEther, parseEther } from 'ethers/lib/utils'
+import { isMovementWithinSpread, calculateFinalPrice } from './helpers'
 
 const ftx = new Ftx()
 const rageTrade = new RageTrade()
@@ -24,9 +25,6 @@ const main = async () => {
     pFtx: number,
     pFinal: number
   ) => {
-    console.log('pFtx', pFtx)
-    console.log('pRage', pRage)
-    console.log('pFinal', pFinal)
     const { vQuoteIn, vTokenIn } = await rageTrade.getLiquidityInRange(pRage, pFinal)
 
     let liquidity = 0
@@ -52,17 +50,21 @@ const main = async () => {
 
   const calculateArbProfit = async (
     pFtx: number,
+    pFinal: number,
     arbAsset: 'ETH' | 'USDC',
     potentialArbSize: number,
   ) => {
     let usdProfit = 0;
 
     if (arbAsset === 'ETH') {
-      const { vQuoteIn } = await rageTrade.simulateSwap(potentialArbSize, false)
+      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, pFinal, false)
       const ethPriceReceived = Number(formatUsdc(vQuoteIn.abs())) / potentialArbSize
 
+      console.log('vTokenIn', formatEther(vTokenIn.abs()))
       console.log('vQuoteIn', formatUsdc(vQuoteIn.abs()))
       console.log('ethPriceReceived', ethPriceReceived)
+
+      console.log('potentialArbSize (from calc arb profit)', potentialArbSize)
 
       usdProfit = potentialArbSize * (ethPriceReceived - pFtx * (1 + ftxFee))
 
@@ -70,13 +72,16 @@ const main = async () => {
     }
 
     if (arbAsset === 'USDC') {
-      const { vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, true)
+      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, pFinal, true)
       const ethPriceReceived = potentialArbSize / Number(formatEther(vTokenIn.abs()))
 
-      console.log('vTokenIn', formatUsdc(vTokenIn.abs()))
+      console.log('vTokenIn', formatEther(vTokenIn.abs()))
+      console.log('vQuoteIn', formatUsdc(vQuoteIn.abs()))
       console.log('ethPriceReceived', ethPriceReceived)
 
-      usdProfit = potentialArbSize * (pFtx * (1 - ftxFee) - ethPriceReceived)
+      console.log('potentialArbSize (from calc arb profit)', potentialArbSize)
+
+      usdProfit = potentialArbSize / (ethPriceReceived - pFtx * (1 - ftxFee))
 
       console.log('usdProfit', usdProfit)
     }
@@ -87,7 +92,7 @@ const main = async () => {
   }
 
   const arbitrage = async () => {
-    const pFinal = calculateFinalPrice(pRage, pFtx, rageFee, ftxFee)
+    const pFinal = calculateFinalPrice(pFtx, pRage, rageFee, ftxFee)
 
     if (isMovementWithinSpread(pRage, pFtx, pFinal) == true) {
       await log('price movement is within spread', 'ARB_BOT')
@@ -109,19 +114,23 @@ const main = async () => {
     console.log('ftxMargin', ftxMargin)
     console.log('updatedArbSize', updatedArbSize)
 
-    const potentialArbProfit = await calculateArbProfit(pFtx, arbAsset, updatedArbSize)
+    const potentialArbProfit = await calculateArbProfit(pFtx, pFinal, arbAsset, updatedArbSize)
 
     console.log('potentialArbProfit', potentialArbProfit)
     console.log(rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT)
 
     if (potentialArbProfit > rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT) {
+
       const ftxSide: OrderSide = arbAsset === 'ETH' ? 'sell' : 'buy'
       const rageSide: OrderSide = arbAsset === 'ETH' ? 'buy' : 'sell'
 
-      await ftx.updatePosition(updatedArbSize, ftxSide)
-      await rageTrade.updatePosition(updatedArbSize, rageSide)
+      const ftxQuantity = arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pFtx
+      const rageQuantity = arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pRage
 
-      console.log('arb successfull')
+      const x = await ftx.updatePosition(ftxQuantity, ftxSide)
+      const y = await rageTrade.updatePosition(rageQuantity, rageSide)
+
+      await log(`arb successful, ${x.result}, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${y.hash}`, 'ARB_BOT')
     }
   }
 

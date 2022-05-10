@@ -20,9 +20,9 @@ async function main() {
   // console.log(formatEther(vTokenIn))
   // console.log(formatUsdc(vQuoteIn))
 
-  const pFinal = calculateFinalPrice(2308, 2117.69, 0.000665, 0.005)
-  console.log('pFinal', pFinal)
-  console.log(isMovementWithinSpread(2308, 2117.69, pFinal))
+  // const pFinal = calculateFinalPrice(2390, 2117.69, 0.000665, 0.005)
+  // console.log('pFinal', pFinal)
+  // console.log(isMovementWithinSpread(2308, 2117.69, pFinal))
 }
 
 main()
