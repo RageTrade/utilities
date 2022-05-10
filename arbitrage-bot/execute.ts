@@ -1,4 +1,5 @@
 import Ftx from './ftx'
+import cron from 'node-cron'
 import { OrderSide } from 'ftx-api'
 import RageTrade from './rage-trade'
 import { log } from '../discord-logger'
@@ -9,6 +10,14 @@ import { isMovementWithinSpread, calculateFinalPrice } from './helpers'
 
 const ftx = new Ftx()
 const rageTrade = new RageTrade()
+
+// to change everything in eth denomination
+// quanties should match in eth
+// _preFlightChecks every x seconds // review
+
+// _preFlightChecks every x seconds // implement
+// change 0.5 to config
+// rebuild, containerize & deploy
 
 const main = async () => {
   await ftx.initialize()
@@ -60,7 +69,7 @@ const main = async () => {
     let usdProfit = 0;
 
     if (arbAsset === 'ETH') {
-      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, pFinal, false)
+      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, false)
       const ethPriceReceived = Number(formatUsdc(vQuoteIn.abs())) / potentialArbSize
 
       console.log('vTokenIn', formatEther(vTokenIn.abs()))
@@ -70,13 +79,15 @@ const main = async () => {
       console.log('potentialArbSize (from calc arb profit)', potentialArbSize)
 
       // vQuoteIn - pAS * pFTX * (1 + ftxFee)
-      usdProfit = potentialArbSize * (ethPriceReceived - pFtx * (1 + ftxFee))
+      // note: + to -
+      usdProfit = potentialArbSize * (pFtx * (1 - ftxFee) - ethPriceReceived)
 
       console.log('usdProfit', usdProfit)
     }
 
     if (arbAsset === 'USDC') {
-      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, pFinal, true)
+      console.log('crossed')
+      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, true)
       const ethPriceReceived = potentialArbSize / Number(formatEther(vTokenIn.abs()))
 
       console.log('vTokenIn', formatEther(vTokenIn.abs()))
@@ -85,7 +96,10 @@ const main = async () => {
 
       console.log('potentialArbSize (from calc arb profit)', potentialArbSize)
 
-      usdProfit = potentialArbSize / (ethPriceReceived - pFtx * (1 - ftxFee))
+      // mul $ * % diff
+      // note: change numerator and denominator
+      console.log('GM : ', Math.sqrt(pFinal * pRage))
+      usdProfit = potentialArbSize * (ethPriceReceived / (pFtx * (1 + ftxFee)) - 1)
 
       console.log('usdProfit', usdProfit)
     }
@@ -96,9 +110,12 @@ const main = async () => {
   }
 
   const arbitrage = async () => {
+    pFtx = await ftx.queryFtxPrice()
+    pRage = await rageTrade.queryRagePrice()
+
     const pFinal = calculateFinalPrice(pFtx, pRage, rageFee, ftxFee)
 
-    if (isMovementWithinSpread(pRage, pFtx, pFinal) == true) {
+    if (isMovementWithinSpread(pFtx, pRage, pFinal) == true) {
       await log('price movement is within spread', 'ARB_BOT')
       return
     }
@@ -118,7 +135,7 @@ const main = async () => {
     console.log('ftxMargin', ftxMargin)
     console.log('updatedArbSize', updatedArbSize)
 
-    const potentialArbProfit = await calculateArbProfit(pFtx, pFinal, arbAsset, updatedArbSize)
+    const potentialArbProfit = await calculateArbProfit(pFtx, pFinal, arbAsset, Number(updatedArbSize.toFixed(6)))
 
     console.log('potentialArbProfit', potentialArbProfit)
     console.log(rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT)
@@ -128,20 +145,28 @@ const main = async () => {
       const ftxSide: OrderSide = arbAsset === 'ETH' ? 'sell' : 'buy'
       const rageSide: OrderSide = arbAsset === 'ETH' ? 'buy' : 'sell'
 
-      const ftxQuantity = arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pFtx
       const rageQuantity = arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pRage
 
-      console.log('ftxQuantity', ftxQuantity)
       console.log('rageQuantity', rageQuantity)
 
-      const x = await ftx.updatePosition(ftxQuantity, ftxSide)
+      const x = await ftx.updatePosition(rageQuantity, ftxSide)
       const y = await rageTrade.updatePosition(rageQuantity, rageSide)
 
       await log(`arb successful, ${x.result}, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${y.hash}`, 'ARB_BOT')
     }
   }
 
-  arbitrage()
+  cron.schedule('*/20 * * * * *', () => {
+    arbitrage().then(() => console.log('ARB COMPLETE!'))
+      .catch((error) => {
+        console.log(error)
+      })
+  })
 }
 
-main()
+main().then(() => console.log('ARB STARTED!'))
+  .catch((error) => {
+    console.log(error)
+  })
+
+

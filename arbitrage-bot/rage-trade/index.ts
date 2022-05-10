@@ -1,6 +1,7 @@
 import {
-  ClearingHouse, formatUsdc, getContracts, parseUsdc, priceToSqrtPriceX96, priceToTick, priceX128ToPrice, sqrtPriceX96ToPrice, SwapSimulator, truncate
+  ClearingHouse, formatUsdc, getContracts, parseUsdc, priceToSqrtPriceX96, priceToTick, priceX128ToPrice, sqrtPriceX96ToPrice, SwapSimulator, truncate, VPoolWrapper
 } from '@ragetrade/sdk'
+import { IUniswapV3Pool } from '@ragetrade/sdk/dist/typechain/vaults'
 import { BigNumber, BigNumberish, providers, Wallet } from 'ethers'
 import { formatEther, parseEther } from 'ethers/lib/utils'
 import { OrderSide } from 'ftx-api'
@@ -98,9 +99,12 @@ export default class RageTrade {
 
   // add deviation check
   async queryRagePrice() {
-    const priceX128 = await (this.contracts
-      .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID)
-    const price = await priceX128ToPrice(priceX128, 6, 18)
+    // const priceX128 = await (this.contracts
+    //   .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID)
+    // const price = await priceX128ToPrice(priceX128, 6, 18)
+
+    const { sqrtPriceX96 } = await (this.contracts.eth_vPool as IUniswapV3Pool).slot0()
+    const price = await sqrtPriceX96ToPrice(sqrtPriceX96, 6, 18)
 
     return price
   }
@@ -112,7 +116,7 @@ export default class RageTrade {
     // VToken -ve for long
     // VToken +ve for short
     const maxValue =
-      pFinal > pCurrent ? BigNumber.from(2).pow(96) : BigNumber.from(2).pow(96).mul(-1)
+      pFinal > pCurrent ? BigNumber.from(2).pow(90) : BigNumber.from(2).pow(90).mul(-1)
 
     // console.log('priceToSqrtPriceX96', await priceToSqrtPriceX96(pFinal, 6, 18))
     const { swapResult } = await (this.contracts
@@ -162,7 +166,7 @@ export default class RageTrade {
     return 1;
   }
 
-  async simulateSwap(potentialArbSize: number, pFinal: number, isNotional: boolean) {
+  async simulateSwap(potentialArbSize: number, isNotional: boolean) {
 
     let arbSize;
     isNotional ? arbSize = parseUsdc(potentialArbSize.toString())
