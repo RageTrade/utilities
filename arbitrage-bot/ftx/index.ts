@@ -114,7 +114,12 @@ export default class Ftx {
       .mark!
   }
 
-  async simulatePostTrade(
+  async queryFtxMargin() {
+    const margin = (await this.ftxClient.getAccount()).result.totalAccountValue
+    return this._scaleUp(margin)
+  }
+
+  private async _simulatePostTrade(
     size: number,
     price: number,
     side: OrderSide,
@@ -149,7 +154,7 @@ export default class Ftx {
     const {
       oldMarginFraction,
       newMarginFraction,
-    } = await this.simulatePostTrade(
+    } = await this._simulatePostTrade(
       scaled,
       price,
       side,
@@ -162,7 +167,9 @@ export default class Ftx {
         `add more margin to ftx, margin fraction below 0.5, 
         margin fraction before: ${oldMarginFraction},
         margin fraction after current trade: ${newMarginFraction}
-        `, 'ARB_BOT')
+        `,
+        'ARB_BOT'
+      )
     }
 
     if (newMarginFraction < 0.25) {
@@ -170,7 +177,8 @@ export default class Ftx {
         `cannot take further position due to breach of max allowed margin fraction,
         margin fraction before: ${oldMarginFraction},
         margin fraction after current trade: ${newMarginFraction}     
-        `, 'ARB_BOT'
+        `,
+        'ARB_BOT'
       )
       throw new Error(
         'cannot take further position due to breach of max allowed margin fraction'

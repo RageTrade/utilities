@@ -1,52 +1,22 @@
 import {
+  ClearingHouse, formatUsdc, getContracts, parseUsdc, priceToSqrtPriceX96, priceToTick, priceX128ToPrice, sqrtPriceX96ToPrice, SwapSimulator, truncate
+} from '@ragetrade/sdk'
+import { BigNumber, BigNumberish, providers, Wallet } from 'ethers'
+import { formatEther, parseEther } from 'ethers/lib/utils'
+import { OrderSide } from 'ftx-api'
+import {
   AMM_CONFIG,
-  NETWORK_INF0,
-  STRATERGY_CONFIG,
-  PRE_FLIGHT_CHECK,
+  NETWORK_INF0, PRE_FLIGHT_CHECK, STRATERGY_CONFIG
 } from '../../config'
 
-import { Side, NetRagePosition } from '../../types'
-
-import { Wallet, providers, BigNumber, BigNumberish } from 'ethers'
-
-import {
-  getContracts,
-  IERC20Metadata,
-  IOracle,
-  IUniswapV3Pool,
-  priceX128ToPrice,
-  VPoolWrapper,
-  VToken,
-  truncate,
-  sqrtPriceX96ToPrice,
-} from '@ragetrade/sdk'
-
-import {
-  tickToPrice,
-  priceToClosestTick,
-  isSorted,
-  LiquidityMath,
-  maxLiquidityForAmounts,
-  TickList,
-  TickMath,
-} from '@uniswap/v3-sdk'
-
 import { log } from '../../discord-logger'
-
-import { Price, Token } from '@uniswap/sdk-core'
 
 export default class RageTrade {
   private wallet
   private provider
 
-  public netRagePosition: NetRagePosition
-
   private isInitialized = false
 
-  private token0: Token
-  private token1: Token
-
-  public ethPrice: number = 0
   public currentFundingRate: BigNumberish = 0
 
   private contracts: any
@@ -63,19 +33,6 @@ export default class RageTrade {
     )
 
     this.wallet = new Wallet(this.networkInfo.PRIVATE_KEY, this.provider)
-
-    this.netRagePosition = {
-      netSide: Side.BUY,
-      availableMargin: 0,
-      netTokenPosition: {
-        vTokenAmount: BigNumber.from(0),
-        tickLower: 0,
-        tickUpper: 0,
-      },
-      accountMarketValue: 0,
-      lastUpdated: Date.now(),
-      lastTradedFundingRate: 0,
-    }
   }
 
   async initialize() {
@@ -85,20 +42,7 @@ export default class RageTrade {
     await this._setupContracts()
     await this._preFlightChecks()
 
-    this.token0 = new Token(
-      this.networkInfo.CHAIN_ID,
-      this.contracts.eth_vToken.address,
-      await this.contracts.eth_vToken.decimals()
-    )
-
-    this.token1 = new Token(
-      this.networkInfo.CHAIN_ID,
-      this.contracts.vQuote.address,
-      await this.contracts.vQuote.decimals()
-    )
-
     setInterval(async () => this._checkBlockFreshness, 10 * 60 * 100)
-    setInterval(async () => this._updatePricesFromOracle, 3 * 60 * 100)
     setInterval(async () => this._updateCurrentFundingRate, 5 * 60 * 100)
 
     this.isInitialized = true
@@ -111,10 +55,10 @@ export default class RageTrade {
   private async _preFlightChecks() {
     let checks = false
 
-    ;(await this.wallet.getBalance()).toBigInt() <
-    this.preFlightCheck.ARB_ETH_BAL_THRESHOLD
-      ? (checks = true)
-      : null
+      ; (await this.wallet.getBalance()).toBigInt() <
+        this.preFlightCheck.ARB_ETH_BAL_THRESHOLD
+        ? (checks = true)
+        : null
 
     const accInfo = await this.contracts.clearingHouse.getAccountInfo(
       this.ammConfig.ACCOUNT_ID
@@ -122,314 +66,286 @@ export default class RageTrade {
 
     accInfo.owner != this.wallet.address ? (checks = true) : null
 
-    if (accInfo.collateralDeposits.length) {
-      accInfo.collateralDeposits[0].balance.toBigInt() <
-      this.preFlightCheck.RAGETRADE_BAL_THRESHOLD
-        ? (checks = true)
-        : null
-    } else {
-      checks = true
-    }
-
     if (checks) throw new Error('Failed one or more pre-flight checks')
   }
 
   private async _checkBlockFreshness() {
-    const latestBlockNumber = await this.provider.getBlockNumber()
-    const latestBlock = await this.provider.getBlock(latestBlockNumber)
+    const latestBlock = await this.provider.getBlock(this.provider.getBlockNumber())
     const diffNowSeconds = Math.floor(Date.now() / 1000) - latestBlock.timestamp
 
     if (
       diffNowSeconds > this.preFlightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD
-    ) {
-      throw new Error('Stale block/state or provider is lagging')
-    }
-  }
+    ) throw new Error('Stale block/state or provider is lagging')
 
-  private async _updatePricesFromOracle() {
-    const price = await this.contracts.eth_oracle.getTwapPriceX128(300)
-    this.ethPrice = await priceX128ToPrice(
-      price,
-      await this.contracts.settlementToken.decimals(),
-      await this.contracts.eth_vToken.decimals()
-    )
-    console.log(this.ethPrice)
   }
 
   private async _updateCurrentFundingRate() {
     const [
       chainlinkTWAP,
       perpTWAP,
-    ] = await this.contracts.clearingHouse.getTwapPrices(
-      this.contracts.ETH_vTokenDeployment
-    )
+    ] = await Promise.all([
+      (this.contracts.clearingHouse as ClearingHouse).getRealTwapPriceX128(this.ammConfig.POOL_ID),
+      (this.contracts.clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID),
+    ])
 
-    this.currentFundingRate =
-      (perpTWAP.toBigInt() - chainlinkTWAP.toBigInt()) /
-      chainlinkTWAP.toBigInt() /
-      24
+    const num1 = Number(formatEther(chainlinkTWAP))
+    const num2 = Number(formatEther(perpTWAP))
+
+    this.currentFundingRate = ((num2 - num1) / num1 / 24)
+
+    console.log(this.currentFundingRate)
   }
 
-  private async _updateNetPosition() {
-    const values = await this.contracts.clearingHouse.getAccountInfo(
-      this.ammConfig.ACCOUNT_ID
-    )
-    this.netRagePosition.availableMargin = values.collateralDeposits[0].balance
-
-    const netPostion = values.tokenPositions[0].netTraderPosition.abs() // (ETH Long - Eth Short)
-    netPostion.toBigInt() > 0
-      ? (this.netRagePosition.netSide = Side.BUY)
-      : (this.netRagePosition.netSide = Side.SELL)
-
-    this.netRagePosition.netTokenPosition = {
-      vTokenAmount:
-        values.tokenPositions[0].liquidityPositions[0].vTokenAmountIn,
-      tickUpper: values.tokenPositions[0].liquidityPositions[0].tickUpper,
-      tickLower: values.tokenPositions[0].liquidityPositions[0].tickLower,
-    }
-
-    const amv = await this.contracts.clearingHouse.getAccountMarketValueAndRequiredMargin(
-      this.ammConfig.ACCOUNT_ID,
-      true
-    )
-    this.netRagePosition.accountMarketValue = amv.accountMarketValue
-
-    this.netRagePosition.lastUpdated = Date.now()
-  }
-
-  private async _preTxnChecks() {
-    // account bal / adding
-    // funding rate
-    // margin ratio
-  }
-
-  private async _postTxnCalcs() {
-    await this._updateNetPosition()
-  }
-
+  // add deviation check
   async queryRagePrice() {
-    const { sqrtPriceX96 } = await this.contracts.eth_vPool.slot0()
-    return await sqrtPriceX96ToPrice(
-      sqrtPriceX96,
-      await this.contracts.settlementToken.decimals(),
-      await this.contracts.eth_vToken.decimals()
-    )
+    const priceX128 = await (this.contracts
+      .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID)
+    const price = await priceX128ToPrice(priceX128, 6, 18)
+
+    return price
   }
 
-  async queryRelevantUniV3Liquidity(pCurrent: number, pFinal: number) {
-    const priceCurrent = new Price(this.token0, this.token1, pCurrent, 1)
-    const priceFinal = new Price(this.token0, this.token1, pFinal, 1)
+  async getLiquidityInRange(pCurrent: number, pFinal: number) {
 
-    let tickLow = priceToClosestTick(priceCurrent)
-    let tickHigh = priceToClosestTick(priceFinal)
+    // pFinal < Pcurrent => BigNumber.from(10).pow(28) * -1
 
-    let spacing = await this.contracts.eth_vPool.tickSpacing()
+    // VToken -ve for long
+    // VToken +ve for short
+    const maxValue =
+      pFinal > pCurrent ? BigNumber.from(2).pow(96) : BigNumber.from(2).pow(96).mul(-1)
 
-    if (tickLow > tickHigh) {
-      ;[tickLow, tickHigh] = [tickHigh, tickLow]
-    }
-
-    let tickPrices: BigInt[] = []
-    let tickLiquidities: BigInt[] = []
-
-    while (tickLow <= tickHigh) {
-      const {
-        liquidityGross,
-        liquidityNet,
-        feeGrowthOutside0X128,
-        feeGrowthOutside1X128,
-        tickCumulativeOutside,
-        secondsPerLiquidityOutsideX128,
-        secondsOutside,
-        initialized,
-      } = await this.contracts.eth_vPool.ticks(tickLow)
-
-      if (initialized) {
-        tickPrices.push(BigInt(tickLow))
-        tickLiquidities.push(liquidityNet.toBigInt())
-      }
-
-      tickLow += spacing
-    }
+    // console.log('priceToSqrtPriceX96', await priceToSqrtPriceX96(pFinal, 6, 18))
+    const { swapResult } = await (this.contracts
+      .swapSimulator as SwapSimulator).callStatic.simulateSwap(
+        this.contracts.clearingHouse.address,
+        this.ammConfig.POOL_ID,
+        maxValue,
+        await priceToSqrtPriceX96(pFinal, 6, 18),
+        false
+      )
 
     return {
-      tickPrices,
-      tickLiquidities,
+      vTokenIn: swapResult.vTokenIn,
+      vQuoteIn: swapResult.vQuoteIn
     }
   }
 
   async calculateMaxTradeSize(
+    ftxMargin: number,
+    ftxEthPrice: number,
     potentialArbSize: number,
-    side: Side,
-    pFtx: number,
-    ftxFee: number
+    arbAsset: 'ETH' | 'USDC',
   ) {
-    let usdProfit = 0
 
-    if ((side = Side.BUY)) {
-      // buying eth on rage trade
+    const price = await this.queryRagePrice()
+    const positionCap = await this.getRagePositionCap()
 
-      const ethRecieved = await sqrtPriceX96ToPrice(
-        (await this.simulateSwap(BigNumber.from(potentialArbSize))).output
-          .sqrtPriceX96End,
-        await this.contracts.settlementToken.decimals(),
-        await this.contracts.eth_vToken.decimals()
+    let maxSize = 0;
+
+    if (arbAsset === 'ETH') {
+      maxSize = Math.min(positionCap.maxLong, ftxMargin / ftxEthPrice / 0.5)
+    }
+
+    if (arbAsset === 'USDC') {
+      maxSize = Math.min(positionCap.maxShort * price, ftxEthPrice / 0.5)
+    }
+
+    return Math.min(potentialArbSize, maxSize)
+  }
+
+  // for arb testnet, arbgas returned is 0, so making is constant(1$) for now
+  async calculateTradeCost() {
+    return 1;
+  }
+
+  async simulateSwap(potentialArbSize: number, isNotional: boolean) {
+
+    let arbSize;
+    isNotional ? arbSize = parseUsdc(potentialArbSize.toString())
+      : arbSize = parseEther(potentialArbSize.toString())
+
+    console.log('arbSize (from simulate)', arbSize.toString())
+
+    const { swapResult } = await (this.contracts
+      .swapSimulator as SwapSimulator).callStatic.simulateSwap(
+        this.contracts.clearingHouse.address,
+        this.ammConfig.POOL_ID,
+        arbSize,
+        0,
+        isNotional
       )
-      const ethPriceRecieved = potentialArbSize / ethRecieved
-      usdProfit = potentialArbSize * (pFtx * (1 - ftxFee) - ethPriceRecieved)
-    } else {
-      // selling eth on rage trade
-
-      let usdRecieved = await sqrtPriceX96ToPrice(
-        (await this.simulateSwap(BigNumber.from(potentialArbSize))).output
-          .sqrtPriceX96End,
-        await this.contracts.settlementToken.decimals(),
-        await this.contracts.eth_vToken.decimals()
-      )
-      usdRecieved = usdRecieved * this.ethPrice
-      const ethPriceRecieved = usdRecieved / potentialArbSize
-      usdProfit = potentialArbSize * (ethPriceRecieved - pFtx * (1 + ftxFee))
-    }
-
-    return usdProfit - (await this.calculateTradeCost(0)) // TODO: change to ticks crossed
-  }
-
-  async calculateTradeCost(ticksCrossed: number) {
-    return ticksCrossed // TODO: change to gas calc
-  }
-
-  calculateQuoteUsed(
-    lowerPrice: number,
-    upperPrice: number,
-    liquidity: BigNumber
-  ) {
-    return liquidity.mul(Math.sqrt(upperPrice) - Math.sqrt(lowerPrice))
-  }
-
-  calculateBaseUsed(
-    upperPrice: number,
-    lowerPrice: number,
-    liquidity: BigNumber
-  ) {
-    const numerator = Math.sqrt(upperPrice) - Math.sqrt(lowerPrice)
-    const denominator = Math.sqrt(lowerPrice) * Math.sqrt(upperPrice)
-
-    return liquidity.mul(numerator / denominator)
-  }
-
-  async getQuoteAssetUsed(
-    pRage: number,
-    pFinal: BigInt,
-    filteredTickPrices: BigInt[],
-    tickLiquidities: BigInt[]
-  ) {
-    const nTicks = filteredTickPrices.length
-    let currentTick = filteredTickPrices[0]
-
-    let quoteUsed = BigInt(0)
-
-    for (let i = 0; i < nTicks - 1; i++) {
-      quoteUsed += this.calculateQuoteUsed(
-        Math.max(pRage, Number(currentTick)),
-        Number(filteredTickPrices[i + 1]),
-        BigNumber.from(tickLiquidities[i])
-      ).toBigInt()
-
-      currentTick = filteredTickPrices[i + 1]
-    }
-
-    quoteUsed += this.calculateQuoteUsed(
-      Math.max(pRage, Number(currentTick)),
-      Number(pFinal),
-      BigNumber.from(tickLiquidities[-1])
-    ).toBigInt()
-
-    return quoteUsed
-  }
-
-  async getBaseAssetUsed(
-    pRage: number,
-    pFinal: BigInt,
-    filteredTickPrices: BigInt[],
-    tickLiquidities: BigInt[]
-  ) {
-    const nTicks = filteredTickPrices.length
-    let currentTick = filteredTickPrices[-1]
-
-    let baseUsed = this.calculateBaseUsed(
-      pRage,
-      Number(currentTick),
-      BigNumber.from(tickLiquidities[-1])
-    ).toBigInt()
-
-    for (let i = 0; i < nTicks - 1; i++) {
-      baseUsed += this.calculateBaseUsed(
-        Number(currentTick),
-        Math.max(Number(pFinal), Number(filteredTickPrices[-(i + 2)])),
-        BigNumber.from(tickLiquidities[-(i + 2)])
-      ).toBigInt()
-
-      currentTick = filteredTickPrices[-(i + 2)]
-    }
-
-    return baseUsed
-  }
-
-  async simulateSwap(potentialArbSize: BigNumberish) {
-    const output = await this.contracts.swapSimulator.callStatic.simulateSwap(
-      this.contracts.ClearingHouseDeployment,
-      truncate(this.contracts.ETH_vTokenDeployment),
-      potentialArbSize,
-      0,
-      true
-    )
-
-    const price =
-      (await sqrtPriceX96ToPrice(
-        output.sqrtPriceX96End,
-        await this.contracts.settlementToken.decimals(),
-        await this.contracts.eth_vToken.decimals()
-      )) * this.ethPrice
 
     return {
-      output,
-      price,
+      vTokenIn: swapResult.vTokenIn,
+      vQuoteIn: swapResult.vQuoteIn
     }
   }
 
-  async getRageEthPositionCap(ftxEthMargin: number): Promise<BigInt> {
-    const decimals = await this.contracts.settlementToken.decimals()
-    const rawValue =
-      (this.netRagePosition.accountMarketValue as BigNumber).toBigInt() /
-      BigInt(10 ** decimals)
-    const rageEthMargin = rawValue / BigInt(this.ethPrice as number)
+  private async _currentMarginFraction() {
+    const account = await (this.contracts
+      .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
+    const priceX128 = await (this.contracts
+      .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID)
+    const price = await priceX128ToPrice(priceX128, 6, 18)
 
-    if (ftxEthMargin > rageEthMargin) {
-      return rageEthMargin * BigInt(this.stratergyConfig.LOCAL_MAX_LEVERAGE)
-    } else {
-      return (
-        BigInt(ftxEthMargin) * BigInt(this.stratergyConfig.LOCAL_MAX_LEVERAGE)
+    const { marketValue } = await (this.contracts
+      .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
+        this.ammConfig.ACCOUNT_ID,
+        false
+      )
+
+    const openPositionNotional = Number(
+      formatEther(account.tokenPositions[0].netTraderPosition.abs())
+    ) * price
+
+    const marketValueNotional = Number(formatUsdc(marketValue.abs()))
+
+    return (marketValueNotional / openPositionNotional)
+  }
+
+  async getRagePositionCap() {
+    const priceX128 = await (this.contracts
+      .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID)
+    const price = await priceX128ToPrice(priceX128, 6, 18)
+
+    const { marketValue } = await (this.contracts
+      .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
+        this.ammConfig.ACCOUNT_ID,
+        false
+      )
+
+    if (marketValue.eq(0)) throw new Error('Market value is 0, should not happend')
+
+    const marketValueNotional = Number(formatUsdc(marketValue))
+
+    const { tokenPositions } = await (this.contracts
+      .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
+
+    const currentPosition = tokenPositions[0].netTraderPosition || 0
+    const currentPositionNotional = Number(formatEther(currentPosition.abs())) * price
+
+    const diff = (marketValueNotional / 0.5) - currentPositionNotional
+
+    let maxLong = 0, maxShort = 0;
+
+    if (currentPosition.gt(0)) {
+      maxLong = diff
+      maxShort = marketValueNotional + (diff / 0.5)
+    }
+
+    if (currentPosition.lt(0)) {
+      maxLong = marketValueNotional + (diff / 0.5)
+      maxShort = diff
+    }
+
+    if (currentPosition.eq(0)) {
+      maxLong = diff
+      maxShort = diff
+    }
+
+    return {
+      maxLong,
+      maxShort
+    }
+
+  }
+
+  private async _simulatePostTrade(size: number, side: OrderSide) {
+    const priceX128 = await (this.contracts
+      .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID)
+    const price = await priceX128ToPrice(priceX128, 6, 18)
+
+    const { marketValue } = await (this.contracts
+      .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
+        this.ammConfig.ACCOUNT_ID,
+        false
+      )
+
+    const { tokenPositions } = await (this.contracts
+      .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
+
+    const marketValueEth = Number(formatUsdc(marketValue)) / price
+    const currentPosition = tokenPositions[0].netTraderPosition
+
+    const currentPositionEth = Number(formatEther(currentPosition.abs()))
+
+    let newMarginFraction: number = 0;
+
+    if (currentPosition.gte(0) && side == 'buy') {
+      newMarginFraction = marketValueEth / (currentPositionEth + size)
+    } else if (currentPosition.gte(0) && side == 'sell') {
+      currentPositionEth - size == 0 ?
+        newMarginFraction = Number.MAX_SAFE_INTEGER
+        : newMarginFraction = marketValueEth / Math.abs(currentPositionEth - size)
+    } else if (currentPosition.lte(0) && side == 'buy') {
+      currentPositionEth - size == 0 ?
+        newMarginFraction = Number.MAX_SAFE_INTEGER
+        : newMarginFraction = marketValueEth / Math.abs(currentPositionEth - size)
+    } else if (currentPosition.lte(0) && side == 'sell') {
+      newMarginFraction = marketValueEth / (currentPositionEth + size)
+    }
+
+    return newMarginFraction;
+  }
+
+  async updatePosition(size: number, side: OrderSide) {
+
+    const amount = side == 'buy' ? parseEther(size.toString()) : -parseEther(size.toString())
+
+    const oldMarginFraction = await this._currentMarginFraction()
+    const newMarginFraction = await this._simulatePostTrade(size, side)
+
+    if (newMarginFraction < 0.5) {
+      await log(
+        `add more margin to RageTrade, margin fraction below 0.5, 
+        margin fraction before: ${oldMarginFraction},
+        margin fraction after current trade: ${newMarginFraction}
+        `,
+        'ARB_BOT'
       )
     }
-  }
 
-  async getRageNotionalPositionCap(ftxUsdMargin: number): Promise<BigInt> {
-    const decimals = await this.contracts.settlementToken.decimals()
-    const rageUsdMargin =
-      (this.netRagePosition.accountMarketValue as BigNumber).toBigInt() /
-      BigInt(10 ** decimals)
-
-    if (ftxUsdMargin > rageUsdMargin) {
-      return rageUsdMargin * BigInt(this.stratergyConfig.LOCAL_MAX_LEVERAGE)
-    } else {
-      return (
-        BigInt(ftxUsdMargin) * BigInt(this.stratergyConfig.LOCAL_MAX_LEVERAGE)
+    if (newMarginFraction < 0.25) {
+      await log(
+        `cannot take further position due to breach of max allowed margin fraction,
+        margin fraction before: ${oldMarginFraction},
+        margin fraction after current trade: ${newMarginFraction}     
+        `,
+        'ARB_BOT'
+      )
+      throw new Error(
+        'cannot take further position due to breach of max allowed margin fraction'
       )
     }
+
+    const trade = await (this.contracts.clearingHouse as ClearingHouse).swapToken(
+      this.ammConfig.ACCOUNT_ID,
+      this.ammConfig.POOL_ID,
+      {
+        amount: amount,
+        sqrtPriceLimit: 0,
+        isNotional: false,
+        settleProfit: false,
+        isPartialAllowed: false
+      }
+    )
+
+    await trade.wait()
+    return trade;
   }
 
-  async getRageNotionalPosition() {
-    this.netRagePosition.netTokenPosition.vTokenAmount.toBigInt() *
-      BigInt(this.ethPrice)
+  async getRagePosition() {
+    const { tokenPositions } = await (this.contracts
+      .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
+    const priceX128 = await (this.contracts
+      .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID)
+    const price = await priceX128ToPrice(priceX128, 6, 18)
+
+    const position = tokenPositions[0].netTraderPosition
+
+    return {
+      eth: formatEther(position),
+      notional: Number(formatEther(position)) * price
+    }
   }
 }

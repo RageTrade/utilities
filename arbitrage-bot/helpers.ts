@@ -1,6 +1,3 @@
-import Ftx from './ftx'
-import RageTrade from './rage-trade'
-
 export const isMovementWithinSpread = (
   pFtx: number,
   pRage: number,
@@ -13,7 +10,7 @@ export const isMovementWithinSpread = (
   return false
 }
 
-export const calculateFinalPrice = async (
+export const calculateFinalPrice = (
   pFtx: number,
   pRage: number,
   ftxFee: number,

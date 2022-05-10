@@ -5,6 +5,7 @@ const ftx = new Ftx()
 
 async function main() {
   await ftx.initialize()
+  console.log(ftx.takerFee)
   // await ftx._preFlightChecks()
   // console.log(await ftx._estimateFees(0.0002, 2900))
 
