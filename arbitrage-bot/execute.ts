@@ -4,6 +4,7 @@ import { formatUsdc } from '@ragetrade/sdk'
 import { formatEther } from 'ethers/lib/utils'
 import { isMovementWithinSpread, calculateFinalPrice } from './helpers'
 import { log } from '../discord-logger'
+import { OrderSide } from 'ftx-api'
 
 const ftx = new Ftx()
 const rageTrade = new RageTrade()
@@ -114,6 +115,13 @@ const main = async () => {
     console.log(rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT)
 
     if (potentialArbProfit > rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT) {
+      const ftxSide: OrderSide = arbAsset === 'ETH' ? 'sell' : 'buy'
+      const rageSide: OrderSide = arbAsset === 'ETH' ? 'buy' : 'sell'
+
+      await ftx.updatePosition(updatedArbSize, ftxSide)
+      await rageTrade.updatePosition(updatedArbSize, rageSide)
+
+      console.log('arb successfull')
     }
   }
 
