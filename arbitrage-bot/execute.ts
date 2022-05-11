@@ -51,7 +51,7 @@ const main = async () => {
     // selling (short) ETH on rage
     if (pRage > pFtx) {
       symbol = 'USDC'
-      liquidity = Number(formatUsdc(vQuoteIn.abs()))
+      liquidity = Number(formatUsdc(vQuoteIn.abs()))  // for correctness, this should really be changed to ETH
     }
 
     return {
@@ -62,7 +62,7 @@ const main = async () => {
 
   const calculateArbProfit = async (
     pFtx: number,
-    pFinal: number,
+    pFinal: number,  // not used, should remove
     arbAsset: 'ETH' | 'USDC',
     potentialArbSize: number,
   ) => {
@@ -98,8 +98,9 @@ const main = async () => {
 
       // mul $ * % diff
       // note: change numerator and denominator
-      console.log('GM : ', Math.sqrt(pFinal * pRage))
-      usdProfit = potentialArbSize * (ethPriceReceived / (pFtx * (1 + ftxFee)) - 1)
+      // console.log('GM : ', Math.sqrt(pFinal * pRage)) 
+      // this is an estimation unless calculated in ETH terms...
+      usdProfit = potentialArbSize * (ethPriceReceived / (pFtx * (1 + ftxFee)) - 1) 
 
       console.log('usdProfit', usdProfit)
     }
@@ -145,6 +146,7 @@ const main = async () => {
       const ftxSide: OrderSide = arbAsset === 'ETH' ? 'sell' : 'buy'
       const rageSide: OrderSide = arbAsset === 'ETH' ? 'buy' : 'sell'
 
+      // note that when selling, this logic underestimates arb as pRage isn't avg price, should be done in ETH terms..
       const rageQuantity = arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pRage
 
       console.log('rageQuantity', rageQuantity)

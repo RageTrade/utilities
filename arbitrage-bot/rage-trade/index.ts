@@ -53,7 +53,7 @@ export default class RageTrade {
     this.contracts = await getContracts(this.wallet)
   }
 
-  private async _preFlightChecks() {
+  private async _preFlightChecks() {  // should have custom error messages for out of gas and wrong owner errors
     let checks = false
 
       ; (await this.wallet.getBalance()).toBigInt() <
@@ -67,7 +67,7 @@ export default class RageTrade {
 
     accInfo.owner != this.wallet.address ? (checks = true) : null
 
-    if (checks) throw new Error('Failed one or more pre-flight checks')
+    if (checks) throw new Error('Failed one or more pre-flight checks')  // replace generic with custom errors
   }
 
   private async _checkBlockFreshness() {
@@ -148,21 +148,25 @@ export default class RageTrade {
 
     let maxSize = 0;
 
-    if (arbAsset === 'ETH') {
-      maxSize = Math.min(positionCap.maxLong, ftxMargin / ftxEthPrice / 0.5)
+    if (arbAsset === 'ETH') {  // maxLong looks like USD, is this comparing USD to ETH?
+      maxSize = Math.min(positionCap.maxLong, ftxMargin / ftxEthPrice / 0.5)  // these units don't seem right
+      // if maxLong is USD and ftxMargin is in USD (and desired result is ETH), should be:
+      // maxSize = Math.min(positionCap.maxLong / ftxEthPrice, ftxMargin / ftxEthPrice / 0.5)
     }
 
-    if (arbAsset === 'USDC') {
+    if (arbAsset === 'USDC') {  // maxShort looks like USD. why multiply by price, doesn't seem right
       maxSize = Math.min(positionCap.maxShort * price, ftxMargin / 0.5)
+      // if maxLong is USD and ftxMargin is USD (and desired result is USD), should be:
+      // maxSize = Math.min(positionCap.maxShort, ftxMargin / 0.5)
     }
 
     console.log(`maxSize, ${arbAsset}`, maxSize)
 
-    return Math.min(potentialArbSize, maxSize)
+    return Math.min(potentialArbSize, maxSize)  // comparison depends on units
   }
 
   // for arb testnet, arbgas returned is 0, so making is constant(1$) for now
-  async calculateTradeCost() {
+  async calculateTradeCost() {  // should query Arbitrum mainnet gas price or set conservative value (ie $5)
     return 1;
   }
 
@@ -237,7 +241,7 @@ export default class RageTrade {
     let maxLong = 0, maxShort = 0;
 
     if (currentPosition.gt(0)) {
-      maxLong = marketValueNotional / 0.5 - currentPositionNotional
+      maxLong = marketValueNotional / 0.5 - currentPositionNotional  // should replace these 0.5 values w constant
       maxShort = marketValueNotional / 0.5 + currentPositionNotional
     }
     else if (currentPosition.lt(0)) {
