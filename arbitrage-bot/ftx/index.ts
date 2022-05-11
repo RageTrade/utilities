@@ -1,5 +1,5 @@
 import { log } from '../../discord-logger'
-import { FTX_CONFIG, PRE_FLIGHT_CHECK } from '../../config'
+import { FTX_CONFIG, PRE_FLIGHT_CHECK, STRATERGY_CONFIG } from '../../config'
 import { AccountSummary, FuturesPosition, OrderSide, RestClient } from 'ftx-api'
 
 export default class Ftx {
@@ -20,6 +20,8 @@ export default class Ftx {
     )
 
     this.hasOpenPosition = false
+
+    this.takerFee = FTX_CONFIG.FEE
     this.marketId = FTX_CONFIG.MARKET_ID
   }
 
@@ -78,20 +80,22 @@ export default class Ftx {
     ])
 
     if (
-      accountInfo.result.marginFraction < PRE_FLIGHT_CHECK.FTX_MARGIN_RATIO_THRESHOLD &&
+      accountInfo.result.marginFraction <
+        STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD &&
       accountInfo.result.marginFraction !== null
     ) {
       await log(
         `insufficient ftx margin fraction, available: ${accountInfo.result.marginFraction},
-        required: ${PRE_FLIGHT_CHECK.FTX_MARGIN_RATIO_THRESHOLD}`,
+        required: ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}`,
         'ARB_BOT'
       )
 
-      throw new Error('pre flight check failed: insufficient margin ration')
+      throw new Error('pre flight check failed: insufficient margin ratio')
     }
 
     if (
-      accountInfo.result.freeCollateral < PRE_FLIGHT_CHECK.FTX_BALANCE_THRESHOLD && 
+      accountInfo.result.freeCollateral <
+        PRE_FLIGHT_CHECK.FTX_BALANCE_THRESHOLD &&
       accountInfo.result.freeCollateral !== null
     ) {
       await log(
@@ -106,8 +110,6 @@ export default class Ftx {
     if (position.result.length > 0) {
       this.hasOpenPosition = true
     }
-
-    this.takerFee = (await this.ftxClient.getAccount()).result.takerFee
   }
 
   async queryFtxPrice() {
@@ -173,9 +175,9 @@ export default class Ftx {
       account.positions[0]
     )
 
-    if (newMarginFraction < 0.5) {
+    if (newMarginFraction < STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD) {
       await log(
-        `add more margin to ftx, margin fraction below 0.5, 
+        `add more margin to ftx, margin fraction below ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}, 
         margin fraction before: ${oldMarginFraction},
         margin fraction after current trade: ${newMarginFraction}
         `,
@@ -183,7 +185,7 @@ export default class Ftx {
       )
     }
 
-    if (newMarginFraction < 0.25) {
+    if (newMarginFraction < STRATERGY_CONFIG.HARD_MARGIN_RATIO_THRESHOLD) {
       await log(
         `cannot take further position due to breach of max allowed margin fraction,
         margin fraction before: ${oldMarginFraction},

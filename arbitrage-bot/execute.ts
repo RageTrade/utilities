@@ -16,7 +16,6 @@ const rageTrade = new RageTrade()
 // _preFlightChecks every x seconds // review
 
 // _preFlightChecks every x seconds // implement
-// change 0.5 to config
 // rebuild, containerize & deploy
 
 const main = async () => {
@@ -34,7 +33,10 @@ const main = async () => {
     pFtx: number,
     pFinal: number
   ) => {
-    const { vQuoteIn, vTokenIn } = await rageTrade.getLiquidityInRange(pRage, pFinal)
+    const { vQuoteIn, vTokenIn } = await rageTrade.getLiquidityInRange(
+      pRage,
+      pFinal
+    )
 
     console.log('vQuoteIn * ', vQuoteIn.toBigInt())
     console.log('vTokenIn * ', vTokenIn.toBigInt())
@@ -51,26 +53,29 @@ const main = async () => {
     // selling (short) ETH on rage
     if (pRage > pFtx) {
       symbol = 'USDC'
-      liquidity = Number(formatUsdc(vQuoteIn.abs()))  // for correctness, this should really be changed to ETH
+      liquidity = Number(formatUsdc(vQuoteIn.abs())) // for correctness, this should really be changed to ETH
     }
 
     return {
       symbol,
-      liquidity
+      liquidity,
     }
   }
 
   const calculateArbProfit = async (
     pFtx: number,
-    pFinal: number,  // not used, should remove
     arbAsset: 'ETH' | 'USDC',
-    potentialArbSize: number,
+    potentialArbSize: number
   ) => {
-    let usdProfit = 0;
+    let usdProfit = 0
 
     if (arbAsset === 'ETH') {
-      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, false)
-      const ethPriceReceived = Number(formatUsdc(vQuoteIn.abs())) / potentialArbSize
+      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(
+        potentialArbSize,
+        false
+      )
+      const ethPriceReceived =
+        Number(formatUsdc(vQuoteIn.abs())) / potentialArbSize
 
       console.log('vTokenIn', formatEther(vTokenIn.abs()))
       console.log('vQuoteIn', formatUsdc(vQuoteIn.abs()))
@@ -78,17 +83,18 @@ const main = async () => {
 
       console.log('potentialArbSize (from calc arb profit)', potentialArbSize)
 
-      // vQuoteIn - pAS * pFTX * (1 + ftxFee)
-      // note: + to -
       usdProfit = potentialArbSize * (pFtx * (1 - ftxFee) - ethPriceReceived)
 
       console.log('usdProfit', usdProfit)
     }
 
     if (arbAsset === 'USDC') {
-      console.log('crossed')
-      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(potentialArbSize, true)
-      const ethPriceReceived = potentialArbSize / Number(formatEther(vTokenIn.abs()))
+      const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(
+        potentialArbSize,
+        true
+      )
+      const ethPriceReceived =
+        potentialArbSize / Number(formatEther(vTokenIn.abs()))
 
       console.log('vTokenIn', formatEther(vTokenIn.abs()))
       console.log('vQuoteIn', formatUsdc(vQuoteIn.abs()))
@@ -96,11 +102,9 @@ const main = async () => {
 
       console.log('potentialArbSize (from calc arb profit)', potentialArbSize)
 
-      // mul $ * % diff
-      // note: change numerator and denominator
-      // console.log('GM : ', Math.sqrt(pFinal * pRage)) 
       // this is an estimation unless calculated in ETH terms...
-      usdProfit = potentialArbSize * (ethPriceReceived / (pFtx * (1 + ftxFee)) - 1) 
+      usdProfit =
+        potentialArbSize * (ethPriceReceived / (pFtx * (1 + ftxFee)) - 1)
 
       console.log('usdProfit', usdProfit)
     }
@@ -123,11 +127,16 @@ const main = async () => {
 
     const {
       symbol: arbAsset,
-      liquidity: potentialArbSize
+      liquidity: potentialArbSize,
     } = await calculateSizeOfArbitrage(pRage, pFtx, pFinal)
 
     const ftxMargin = await ftx.queryFtxMargin()
-    const updatedArbSize = await rageTrade.calculateMaxTradeSize(ftxMargin, pFtx, potentialArbSize, arbAsset)
+    const updatedArbSize = await rageTrade.calculateMaxTradeSize(
+      ftxMargin,
+      pFtx,
+      potentialArbSize,
+      arbAsset
+    )
 
     console.log('pFtx', pFtx)
     console.log('pRage', pRage)
@@ -136,39 +145,46 @@ const main = async () => {
     console.log('ftxMargin', ftxMargin)
     console.log('updatedArbSize', updatedArbSize)
 
-    const potentialArbProfit = await calculateArbProfit(pFtx, pFinal, arbAsset, Number(updatedArbSize.toFixed(6)))
+    const potentialArbProfit = await calculateArbProfit(
+      pFtx,
+      arbAsset,
+      Number(updatedArbSize.toFixed(6))
+    )
 
     console.log('potentialArbProfit', potentialArbProfit)
     console.log(rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT)
 
     if (potentialArbProfit > rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT) {
-
       const ftxSide: OrderSide = arbAsset === 'ETH' ? 'sell' : 'buy'
       const rageSide: OrderSide = arbAsset === 'ETH' ? 'buy' : 'sell'
 
       // note that when selling, this logic underestimates arb as pRage isn't avg price, should be done in ETH terms..
-      const rageQuantity = arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pRage
+      const rageQuantity =
+        arbAsset === 'ETH' ? updatedArbSize : updatedArbSize / pRage
 
       console.log('rageQuantity', rageQuantity)
 
       const x = await ftx.updatePosition(rageQuantity, ftxSide)
       const y = await rageTrade.updatePosition(rageQuantity, rageSide)
 
-      await log(`arb successful, ${x.result}, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${y.hash}`, 'ARB_BOT')
+      await log(
+        `arb successful, ${x.result}, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${y.hash}`,
+        'ARB_BOT'
+      )
     }
   }
 
   cron.schedule('*/20 * * * * *', () => {
-    arbitrage().then(() => console.log('ARB COMPLETE!'))
+    arbitrage()
+      .then(() => console.log('ARB COMPLETE!'))
       .catch((error) => {
         console.log(error)
       })
   })
 }
 
-main().then(() => console.log('ARB STARTED!'))
+main()
+  .then(() => console.log('ARB STARTED!'))
   .catch((error) => {
     console.log(error)
   })
-
-
