@@ -89,8 +89,7 @@ export default class Ftx {
         required: ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}`,
         'ARB_BOT'
       )
-
-      throw new Error('pre flight check failed: insufficient margin ratio')
+      return  // should just turn off and turn back on next interval
     }
 
     if (
@@ -103,8 +102,7 @@ export default class Ftx {
         required: ${PRE_FLIGHT_CHECK.FTX_BALANCE_THRESHOLD}`,
         'ARB_BOT'
       )
-
-      throw new Error('pre flight check failed: insufficient free collateral')
+      return
     }
 
     if (position.result.length > 0) {

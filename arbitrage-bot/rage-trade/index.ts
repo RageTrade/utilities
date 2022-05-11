@@ -62,21 +62,19 @@ export default class RageTrade {
   }
 
   private async _preFlightChecks() {
-    // should have custom error messages for out of gas and wrong owner errors
-    let checks = false
-
-    ;(await this.wallet.getBalance()).toBigInt() <
-    this.preFlightCheck.ARB_ETH_BAL_THRESHOLD
-      ? (checks = true)
-      : null
+    if ((await this.wallet.getBalance()).toBigInt() < this.preFlightCheck.ARB_ETH_BAL_THRESHOLD) {
+      console.log('Arbitrum account out of gas')  // should send to discord
+      return
+    }
 
     const accInfo = await this.contracts.clearingHouse.getAccountInfo(
       this.ammConfig.ACCOUNT_ID
     )
 
-    accInfo.owner != this.wallet.address ? (checks = true) : null
-
-    if (checks) throw new Error('Failed one or more pre-flight checks') // replace generic with custom errors
+    if (accInfo.owner != this.wallet.address) {
+      console.log('Account owner does not equal wallet address')
+      return
+    }
   }
 
   private async _checkBlockFreshness() {
@@ -150,33 +148,30 @@ export default class RageTrade {
   async calculateMaxTradeSize(
     ftxMargin: number,
     ftxEthPrice: number,
-    potentialArbSize: number,
-    arbAsset: 'ETH' | 'USDC'
+    potentialArbSize: number  // this is signed ETH
   ) {
     const price = await this.queryRagePrice()
-    const positionCap = await this.getRagePositionCap()
+    const positionCap = await this.getRagePositionCap()  // in USD
 
     console.log('positionCap', positionCap)
 
     let maxSize = 0
-
-    if (arbAsset === 'ETH') {
+    
+    if (potentialArbSize >= 0) {  // Long Rage
       maxSize = Math.min(
-        positionCap.maxLong / price,
-        ftxMargin / ftxEthPrice / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
+          positionCap.maxLong / ftxEthPrice,  // uses FTX price to calculate LOWER BOUND on max position
+          ftxMargin / ftxEthPrice / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
+      )
+    } else if (potentialArbSize < 0) {  // Short Rage
+      maxSize = Math.min(
+          positionCap.maxShort / price,  // uses Rage price to calculate LOWER BOUND on max position
+          ftxMargin / price / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
       )
     }
 
-    if (arbAsset === 'USDC') {
-      maxSize = Math.min(
-        positionCap.maxShort,
-        ftxMargin / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
-      )
-    }
+    console.log('maxSize: ', maxSize)
 
-    console.log(`maxSize, ${arbAsset}`, maxSize)
-
-    return Math.min(potentialArbSize, maxSize) // comparison depends on units
+    return Math.min(Math.abs(potentialArbSize), maxSize) * Math.sign(potentialArbSize) // comparison depends on units
   }
 
   // for arb testnet, arbgas returned is 0, so making is constant(1$) for now
@@ -232,7 +227,7 @@ export default class RageTrade {
     return marketValueNotional / openPositionNotional
   }
 
-  async getRagePositionCap() {
+  async getRagePositionCap() { 
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
       this.ammConfig.POOL_ID
