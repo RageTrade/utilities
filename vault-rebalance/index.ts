@@ -29,7 +29,7 @@ const rebalance = async () => {
     await tx.wait()
 
     await log(
-      `rebalanced! ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+      `rebalanced! ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx.hash}`,
       'REBALANCE'
     )
   } else {
@@ -59,7 +59,7 @@ const closeTokenPosition = async () => {
   await tx.wait()
 
   await log(
-    `token position closed! ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+    `token position closed! ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx.hash}`,
     'REBALANCE'
   )
 
