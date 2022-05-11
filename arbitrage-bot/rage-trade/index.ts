@@ -151,27 +151,21 @@ export default class RageTrade {
     potentialArbSize: number  // this is signed ETH
   ) {
     const price = await this.queryRagePrice()
-    const positionCap = await this.getRagePositionCap()  // in USD
+    const positionCaps = await this.getRagePositionCaps()  // in USD
 
+    console.log('positionCaps', positionCaps)
+
+    let positionCap = potentialArbSize >= 0 ? positionCaps.maxLong: positionCaps.maxShort
     console.log('positionCap', positionCap)
 
-    let maxSize = 0
-    
-    if (potentialArbSize >= 0) {  // Long Rage
-      maxSize = Math.min(
-          positionCap.maxLong / ftxEthPrice,  // uses FTX price to calculate LOWER BOUND on max position
-          ftxMargin / ftxEthPrice / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
-      )
-    } else if (potentialArbSize < 0) {  // Short Rage
-      maxSize = Math.min(
-          positionCap.maxShort / price,  // uses Rage price to calculate LOWER BOUND on max position
-          ftxMargin / price / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
-      )
-    }
+    let maxSize = Math.min(
+        positionCap / Math.max(price, ftxEthPrice),
+        ftxMargin / Math.max(price, ftxEthPrice) / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
+    )
 
     console.log('maxSize: ', maxSize)
 
-    return Math.min(Math.abs(potentialArbSize), maxSize) * Math.sign(potentialArbSize) // comparison depends on units
+    return Math.min(Math.abs(potentialArbSize), maxSize) * Math.sign(potentialArbSize)
   }
 
   // for arb testnet, arbgas returned is 0, so making is constant(1$) for now
@@ -227,7 +221,7 @@ export default class RageTrade {
     return marketValueNotional / openPositionNotional
   }
 
-  async getRagePositionCap() { 
+  async getRagePositionCaps() {
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
       this.ammConfig.POOL_ID
