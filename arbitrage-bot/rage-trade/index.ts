@@ -3,9 +3,10 @@ import {
   formatUsdc,
   getContracts,
   parseUsdc,
-  priceToSqrtPriceX96, priceX128ToPrice,
+  priceToSqrtPriceX96,
+  priceX128ToPrice,
   sqrtPriceX96ToPrice,
-  SwapSimulator
+  SwapSimulator,
 } from '@ragetrade/sdk'
 import { IUniswapV3Pool } from '@ragetrade/sdk/dist/typechain/vaults'
 import { BigNumber, providers, Wallet } from 'ethers'
@@ -15,10 +16,9 @@ import {
   AMM_CONFIG,
   NETWORK_INF0,
   PRE_FLIGHT_CHECK,
-  STRATERGY_CONFIG
+  STRATERGY_CONFIG,
 } from '../../config'
 import { log } from '../../discord-logger'
-
 
 export default class RageTrade {
   private wallet
@@ -132,7 +132,6 @@ export default class RageTrade {
         ? BigNumber.from(2).pow(90)
         : BigNumber.from(2).pow(90).mul(-1)
 
-    // console.log('priceToSqrtPriceX96', await priceToSqrtPriceX96(pFinal, 6, 18))
     const { swapResult } = await (this.contracts
       .swapSimulator as SwapSimulator).callStatic.simulateSwap(
       this.contracts.clearingHouse.address,
@@ -162,23 +161,17 @@ export default class RageTrade {
     let maxSize = 0
 
     if (arbAsset === 'ETH') {
-      // maxLong looks like USD, is this comparing USD to ETH?
       maxSize = Math.min(
-        positionCap.maxLong,
+        positionCap.maxLong / price,
         ftxMargin / ftxEthPrice / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
-      ) // these units don't seem right
-      // if maxLong is USD and ftxMargin is in USD (and desired result is ETH), should be:
-      // maxSize = Math.min(positionCap.maxLong / ftxEthPrice, ftxMargin / ftxEthPrice / 0.5)
+      )
     }
 
     if (arbAsset === 'USDC') {
-      // maxShort looks like USD. why multiply by price, doesn't seem right
       maxSize = Math.min(
-        positionCap.maxShort * price,
+        positionCap.maxShort,
         ftxMargin / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
       )
-      // if maxLong is USD and ftxMargin is USD (and desired result is USD), should be:
-      // maxSize = Math.min(positionCap.maxShort, ftxMargin / 0.5)
     }
 
     console.log(`maxSize, ${arbAsset}`, maxSize)
