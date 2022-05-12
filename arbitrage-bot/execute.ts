@@ -3,7 +3,7 @@ import cron from 'node-cron'
 import { OrderSide } from 'ftx-api'
 import RageTrade from './rage-trade'
 import { log } from '../discord-logger'
-import { NETWORK_INF0 } from '../config'
+import { NETWORK_INF0, STRATERGY_CONFIG } from '../config'
 import { formatUsdc } from '@ragetrade/sdk'
 import { formatEther, parseEther } from 'ethers/lib/utils'
 import { isMovementWithinSpread, calculateFinalPrice, calculateArbRevenue } from './helpers'
@@ -13,6 +13,8 @@ const rageTrade = new RageTrade()
 
 /** arbitrage entrypoint */
 const main = async () => {
+  let cronMutex = false
+
   await ftx.initialize()
   await rageTrade.initialize()
 
@@ -28,12 +30,12 @@ const main = async () => {
     pFtx: number,
     pFinal: number
   ) => {
-    const { vQuoteIn, vTokenIn } = await rageTrade.getLiquidityInRange(
+    const { vTokenIn } = await rageTrade.getLiquidityInRange(
       pRage,
       pFinal
     )
 
-    let maxEthPosition = - Number(formatEther(vTokenIn))  // max directional eth position to close price difference
+    let maxEthPosition = -Number(formatEther(vTokenIn))  // max directional eth position to close price difference
 
     return {
       maxEthPosition
@@ -46,8 +48,8 @@ const main = async () => {
     potentialArbSize: number
   ) => {
     const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(
-        potentialArbSize,
-        false
+      potentialArbSize,
+      false
     )
 
     const ethPriceReceived = Number(formatUsdc(vQuoteIn.abs())) / Math.abs(potentialArbSize)
@@ -66,6 +68,8 @@ const main = async () => {
 
   /** checks for arb and if found, executes the arb */
   const arbitrage = async () => {
+    cronMutex = true
+
     pFtx = await ftx.queryFtxPrice()
     pRage = await rageTrade.queryRagePrice()
 
@@ -76,7 +80,7 @@ const main = async () => {
       return
     }
 
-    const {maxEthPosition: potentialArbSize} = await calculateSizeOfArbitrage(pRage, pFtx, pFinal)
+    const { maxEthPosition: potentialArbSize } = await calculateSizeOfArbitrage(pRage, pFtx, pFinal)
 
     const ftxMargin = await ftx.queryFtxMargin()
     const updatedArbSize = await rageTrade.calculateMaxTradeSize(
@@ -98,17 +102,46 @@ const main = async () => {
     )
 
     if (potentialArbProfit > rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT) {
-      const x = await ftx.updatePosition(updatedArbSize)
-      const y = await rageTrade.updatePosition(updatedArbSize)
+      let isSuccessful = false
+      const positionPostTrade = await ftx.updatePosition(updatedArbSize)
 
-      await log(
-        `arb successful, ${x.result}, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${y.hash}`,
+      try {
+        await rageTrade.updatePosition(updatedArbSize)
+        isSuccessful = true
+      }
+      catch (e) {
+        isSuccessful = false
+        await log(`error: ${e}, reversing position on ftx`, 'ARB_BOT')
+        await ftx.updatePosition(-updatedArbSize)
+      }
+
+      const [ragePrice, ragePosition] = await Promise.all([
+        rageTrade.queryRagePrice(),
+        (await rageTrade.getRagePosition()).eth,
+      ])
+
+      isSuccessful ? await log(
+        `arb successful,
+        ftxNetSize: ${positionPostTrade.result[0].netSize},
+        rageNetSize: ${ragePrice},
+        ftxPrice: ${positionPostTrade.result[0].entryPrice},
+        ragePrice: ${ragePosition},
+        pFinal (expected): ${pFinal},
+        pFinal - pRage: ${pFinal - ragePrice},
+        pFtx - pRage: ${positionPostTrade.result[0].entryPrice! - ragePrice}`,
+
         'ARB_BOT'
-      )
+      ) : null
     }
+
+    cronMutex = false
   }
 
-  cron.schedule('*/20 * * * * *', () => {
+  cron.schedule(`*/${STRATERGY_CONFIG.FREQUENCY} * * * * *`, () => {
+    if (cronMutex) {
+      log('SKIPPING ITERATION, BOT IS ALREADY ARBING', 'ARB_BOT')
+      return
+    }
     arbitrage()
       .then(() => console.log('ARB COMPLETE!'))
       .catch((error) => {
@@ -118,7 +151,7 @@ const main = async () => {
 }
 
 main()
-  .then(() => console.log('ARB STARTED!'))
+  .then(() => log(`ARB BOT STARTED WITH FREQUENCY OF ${STRATERGY_CONFIG.FREQUENCY} seconds`, 'ARB_BOT'))
   .catch((error) => {
     console.log(error.message)
   })
