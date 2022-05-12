@@ -26,10 +26,10 @@ export const calculateFinalPrice = (
 
 /** calculates amount of tokens arb will make before gas cost */
 export const calculateArbRevenue = (
-    pFtx: number,
-    potentialArbSize: number,
-    ethPriceReceived: number,
-    ftxFee: number
+  pFtx: number,
+  potentialArbSize: number,
+  ethPriceReceived: number,
+  ftxFee: number
 ) => {
   return - potentialArbSize * (ethPriceReceived - pFtx * (1 - ftxFee * Math.sign(potentialArbSize)))
 }

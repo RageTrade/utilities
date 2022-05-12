@@ -67,7 +67,7 @@ const closeTokenPosition = async () => {
   await log(`updated reset value is ${isReset} `, 'REBALANCE')
 }
 
-cron.schedule('0 0 * * *', () => {
+cron.schedule('*/30 * * * * *', () => {
   rebalance()
     .then(() => console.log('REBALANCE RUN COMPLETE!'))
     .catch((error) => {
@@ -76,7 +76,7 @@ cron.schedule('0 0 * * *', () => {
     })
 })
 
-cron.schedule('*/28 * * * *', () => {
+cron.schedule('*/1 * * * *', () => {
   if (!isReset) return
 
   closeTokenPosition()

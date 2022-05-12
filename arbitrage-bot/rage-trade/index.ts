@@ -63,7 +63,10 @@ export default class RageTrade {
 
   /** checks for fatal errors which should prevent arb transactions from occuring */
   private async _preFlightChecks() {
-    if ((await this.wallet.getBalance()).toBigInt() < this.preFlightCheck.ARB_ETH_BAL_THRESHOLD) {
+    if (
+      (await this.wallet.getBalance()).toBigInt() <
+      this.preFlightCheck.ARB_ETH_BAL_THRESHOLD
+    ) {
       await log('Arbitrum account out of gas', 'ARB_BOT')
       throw new Error('Arbitrum account out of gas')
     }
@@ -144,21 +147,27 @@ export default class RageTrade {
   async calculateMaxTradeSize(
     ftxMargin: number,
     ftxEthPrice: number,
-    potentialArbSize: number  // this is signed ETH
+    potentialArbSize: number // this is signed ETH
   ) {
     const rageEthPrice = await this.queryRagePrice()
-    const positionCaps = await this.getRagePositionCaps()  // in USD
-    let positionCap = potentialArbSize >= 0 ? positionCaps.maxLong: positionCaps.maxShort
+    const positionCaps = await this.getRagePositionCaps() // in USD
+    let positionCap =
+      potentialArbSize >= 0 ? positionCaps.maxLong : positionCaps.maxShort
     let maxSize = Math.min(
-        positionCap / Math.max(rageEthPrice, ftxEthPrice),
-        ftxMargin / Math.max(rageEthPrice, ftxEthPrice) / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
+      positionCap / Math.max(rageEthPrice, ftxEthPrice),
+      ftxMargin /
+        Math.max(rageEthPrice, ftxEthPrice) /
+        STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
     )
 
     console.log('positionCaps', positionCaps)
     console.log('positionCap', positionCap)
     console.log('maxSize: ', maxSize)
 
-    return Math.min(Math.abs(potentialArbSize), maxSize) * Math.sign(potentialArbSize)
+    return (
+      Math.min(Math.abs(potentialArbSize), maxSize) *
+      Math.sign(potentialArbSize)
+    )
   }
 
   // for arb testnet, arbgas returned is 0, so making is constant(1$) for now
@@ -217,13 +226,13 @@ export default class RageTrade {
 
   /** returns the max position sizes bot can take (in USD) for both Long and Short directions */
   async getRagePositionCaps() {
-    const priceX128 = await (this.contracts  // query current ETH twap price
+    const priceX128 = await (this.contracts // query current ETH twap price
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
       this.ammConfig.POOL_ID
     )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
-    const { marketValue } = await (this.contracts  // query Rage account current market value
+    const { marketValue } = await (this.contracts // query Rage account current market value
       .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
       this.ammConfig.ACCOUNT_ID,
       false
@@ -237,12 +246,17 @@ export default class RageTrade {
     const { tokenPositions } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
 
-    const currentPosition = tokenPositions[0].netTraderPosition || 0  // selects ETH position from positions
-    const currentPositionNotional = Number(formatEther(currentPosition.abs())) * price
-    const isLong = currentPosition.gte(0) ? 1: -1
+    const currentPosition = tokenPositions[0].netTraderPosition || 0 // selects ETH position from positions
+    const currentPositionNotional =
+      Number(formatEther(currentPosition.abs())) * price
+    const isLong = currentPosition.gte(0) ? 1 : -1
 
-    const maxLong = marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD - currentPositionNotional * isLong
-    const maxShort = marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD + currentPositionNotional * isLong
+    const maxLong =
+      marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD -
+      currentPositionNotional * isLong
+    const maxShort =
+      marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD +
+      currentPositionNotional * isLong
 
     return {
       maxLong,
@@ -271,13 +285,14 @@ export default class RageTrade {
     const currentPosition = tokenPositions[0].netTraderPosition
     const currentPositionEth = Number(formatEther(currentPosition))
 
-    const newMarginFraction: number = (currentPositionEth + size) == 0
+    const newMarginFraction: number =
+      currentPositionEth + size == 0
         ? Number.MAX_SAFE_INTEGER
         : marketValueEth / Math.abs(currentPositionEth + size)
 
     return newMarginFraction
   }
-  
+
   /** makes a Rage trade */
   async updatePosition(size: number) {
     const amount = parseEther(size.toString())
@@ -324,7 +339,7 @@ export default class RageTrade {
     await trade.wait()
     return trade
   }
-  
+
   /** gets Rage position in both ETH and USD terms */
   async getRagePosition() {
     const { tokenPositions } = await (this.contracts
