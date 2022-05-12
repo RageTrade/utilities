@@ -268,35 +268,18 @@ export default class RageTrade {
 
     const marketValueEth = Number(formatUsdc(marketValue)) / price
     const currentPosition = tokenPositions[0].netTraderPosition
+    const currentPositionEth = Number(formatEther(currentPosition))
+    const isLong = side == 'buy' ? 1: -1
 
-    const currentPositionEth = Number(formatEther(currentPosition.abs()))
-
-    let newMarginFraction: number = 0
-
-    if (currentPosition.gte(0) && side == 'buy') {
-      newMarginFraction = marketValueEth / (currentPositionEth + size)
-    } else if (currentPosition.gte(0) && side == 'sell') {
-      currentPositionEth - size == 0
-        ? (newMarginFraction = Number.MAX_SAFE_INTEGER)
-        : (newMarginFraction =
-            marketValueEth / Math.abs(currentPositionEth - size))
-    } else if (currentPosition.lte(0) && side == 'buy') {
-      currentPositionEth - size == 0
-        ? (newMarginFraction = Number.MAX_SAFE_INTEGER)
-        : (newMarginFraction =
-            marketValueEth / Math.abs(currentPositionEth - size))
-    } else if (currentPosition.lte(0) && side == 'sell') {
-      newMarginFraction = marketValueEth / (currentPositionEth + size)
-    }
+    const newMarginFraction: number = (currentPositionEth + size * isLong) == 0
+        ? Number.MAX_SAFE_INTEGER
+        : marketValueEth / Math.abs(currentPositionEth + size * isLong)
 
     return newMarginFraction
   }
 
   async updatePosition(size: number, side: OrderSide) {
-    const amount =
-      side == 'buy'
-        ? parseEther(size.toString())
-        : parseEther((-1 * size).toString())
+    const amount = side == 'buy' ? parseEther(size.toString()): parseEther((-1 * size).toString())
 
     const oldMarginFraction = await this._currentMarginFraction()
     const newMarginFraction = await this._simulatePostTrade(size, side)

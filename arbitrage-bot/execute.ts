@@ -6,7 +6,7 @@ import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config'
 import { formatUsdc } from '@ragetrade/sdk'
 import { formatEther, parseEther } from 'ethers/lib/utils'
-import { isMovementWithinSpread, calculateFinalPrice } from './helpers'
+import { isMovementWithinSpread, calculateFinalPrice, calculateArbRevenue } from './helpers'
 
 const ftx = new Ftx()
 const rageTrade = new RageTrade()
@@ -40,15 +40,6 @@ const main = async () => {
     }
   }
 
-  /** calculates amount of tokens arb will make before gas cost */
-  const calculateArbRevenue = async(
-      pFtx: number,
-      potentialArbSize: number,
-      ethPriceReceived: number,
-  ) => {
-    return - potentialArbSize * (ethPriceReceived - pFtx * (1 - ftxFee * Math.sign(potentialArbSize)))
-  }
-
   /** calculates arb trade USD profit */
   const calculateArbProfit = async (
     pFtx: number,
@@ -60,7 +51,7 @@ const main = async () => {
     )
 
     const ethPriceReceived = Number(formatUsdc(vQuoteIn.abs())) / Math.abs(potentialArbSize)
-    let usdRevenue = calculateArbRevenue(pFtx, potentialArbSize, ethPriceReceived)
+    let usdRevenue = calculateArbRevenue(pFtx, potentialArbSize, ethPriceReceived, ftxFee)
     const tradeCost = await rageTrade.calculateTradeCost()
 
     console.log('vTokenIn', formatEther(vTokenIn))
