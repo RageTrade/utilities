@@ -250,7 +250,8 @@ export default class RageTrade {
     }
   }
 
-  private async _simulatePostTrade(size: number, side: OrderSide) {
+  /** simulates the margin ratio after a potential trade occurs */
+  private async _simulatePostTrade(size: number) {
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
       this.ammConfig.POOL_ID
@@ -269,20 +270,20 @@ export default class RageTrade {
     const marketValueEth = Number(formatUsdc(marketValue)) / price
     const currentPosition = tokenPositions[0].netTraderPosition
     const currentPositionEth = Number(formatEther(currentPosition))
-    const isLong = side == 'buy' ? 1: -1
 
-    const newMarginFraction: number = (currentPositionEth + size * isLong) == 0
+    const newMarginFraction: number = (currentPositionEth + size) == 0
         ? Number.MAX_SAFE_INTEGER
-        : marketValueEth / Math.abs(currentPositionEth + size * isLong)
+        : marketValueEth / Math.abs(currentPositionEth + size)
 
     return newMarginFraction
   }
-
-  async updatePosition(size: number, side: OrderSide) {
-    const amount = side == 'buy' ? parseEther(size.toString()): parseEther((-1 * size).toString())
+  
+  /** makes a Rage trade */
+  async updatePosition(size: number) {
+    const amount = parseEther(size.toString())
 
     const oldMarginFraction = await this._currentMarginFraction()
-    const newMarginFraction = await this._simulatePostTrade(size, side)
+    const newMarginFraction = await this._simulatePostTrade(size)
 
     if (newMarginFraction < STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD) {
       await log(
@@ -323,7 +324,8 @@ export default class RageTrade {
     await trade.wait()
     return trade
   }
-
+  
+  /** gets Rage position in both ETH and USD terms */
   async getRagePosition() {
     const { tokenPositions } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)

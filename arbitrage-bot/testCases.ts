@@ -19,6 +19,9 @@ const main = async () => {
     } else {
         console.log('Test Failed! Numbers are not equal')
     }
+    
+    console.log('')
+    console.log('Testing price ')
 }
 
 main().then(() => console.log('Running test cases!'))

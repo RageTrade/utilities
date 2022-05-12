@@ -157,7 +157,9 @@ export default class Ftx {
     }
   }
 
-  async updatePosition(size: number, side: OrderSide) {
+  async updatePosition(size: number) {
+    const side: OrderSide = size >= 0 ? 'sell' : 'buy'
+    size = Math.abs(size)
     const scaled = this._scaleDown(size)
     const price = await this.queryFtxPrice()
     const account = (await this.ftxClient.getAccount()).result

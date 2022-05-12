@@ -98,11 +98,8 @@ const main = async () => {
     )
 
     if (potentialArbProfit > rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT) {
-      const ftxSide: OrderSide = updatedArbSize >= 0 ? 'sell' : 'buy'
-      const rageSide: OrderSide = updatedArbSize >= 0 ? 'buy' : 'sell'
-
-      const x = await ftx.updatePosition(Math.abs(updatedArbSize), ftxSide)
-      const y = await rageTrade.updatePosition(Math.abs(updatedArbSize), rageSide)
+      const x = await ftx.updatePosition(updatedArbSize)
+      const y = await rageTrade.updatePosition(updatedArbSize)
 
       await log(
         `arb successful, ${x.result}, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${y.hash}`,
