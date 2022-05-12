@@ -10,6 +10,8 @@ export default class Ftx {
 
   public hasOpenPosition: boolean
 
+  public currentFundingRate = 0
+
   constructor() {
     this.ftxClient = new RestClient(
       FTX_CONFIG.ACCESS_KEY,
@@ -27,6 +29,7 @@ export default class Ftx {
 
   async initialize() {
     await this._preFlightChecks()
+    setInterval(async () => this._updateCurrentFundingRate, 5 * 60 * 100)
   }
 
   private _scaleDown(size: number) {
@@ -49,6 +52,11 @@ export default class Ftx {
     const totalFp = fundingPayment.result[0].rate * netSize * price
 
     return totalFp
+  }
+
+  private async _updateCurrentFundingRate() {
+    this.currentFundingRate = await this._estimateFundingFees(1, 1)  // estimates funding rate
+    console.log(this.currentFundingRate)
   }
 
   async netProfit() {
