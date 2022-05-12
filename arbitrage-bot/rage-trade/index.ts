@@ -61,10 +61,11 @@ export default class RageTrade {
     this.contracts = await getContracts(this.wallet)
   }
 
+  /** checks for fatal errors which should prevent arb transactions from occuring */
   private async _preFlightChecks() {
     if ((await this.wallet.getBalance()).toBigInt() < this.preFlightCheck.ARB_ETH_BAL_THRESHOLD) {
-      console.log('Arbitrum account out of gas')  // should send to discord
-      return
+      await log('Arbitrum account out of gas', 'ARB_BOT')
+      throw new Error('Arbitrum account out of gas')
     }
 
     const accInfo = await this.contracts.clearingHouse.getAccountInfo(
@@ -72,8 +73,8 @@ export default class RageTrade {
     )
 
     if (accInfo.owner != this.wallet.address) {
-      console.log('Account owner does not equal wallet address')
-      return
+      await log('Account owner does not equal wallet address', 'ARB_BOT')
+      throw new Error('Account owner does not equal wallet address')
     }
   }
 
@@ -108,11 +109,8 @@ export default class RageTrade {
   }
 
   // add deviation check
+  /** queries current Rage price from contracts */
   async queryRagePrice() {
-    // const priceX128 = await (this.contracts
-    //   .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(this.ammConfig.POOL_ID)
-    // const price = await priceX128ToPrice(priceX128, 6, 18)
-
     const { sqrtPriceX96 } = await (this.contracts
       .eth_vPool as IUniswapV3Pool).slot0()
     const price = await sqrtPriceX96ToPrice(sqrtPriceX96, 6, 18)
@@ -120,11 +118,8 @@ export default class RageTrade {
     return price
   }
 
+  /** function returns total amount of tokens required to trade from current price to final/true price */
   async getLiquidityInRange(pCurrent: number, pFinal: number) {
-    // pFinal < Pcurrent => BigNumber.from(10).pow(28) * -1
-
-    // VToken -ve for long
-    // VToken +ve for short
     const maxValue =
       pFinal > pCurrent
         ? BigNumber.from(2).pow(90)
@@ -145,24 +140,22 @@ export default class RageTrade {
     }
   }
 
+  /** function determines maximum arbitrage trade size bot can take given opprotunity size and available margin */
   async calculateMaxTradeSize(
     ftxMargin: number,
     ftxEthPrice: number,
     potentialArbSize: number  // this is signed ETH
   ) {
-    const price = await this.queryRagePrice()
+    const rageEthPrice = await this.queryRagePrice()
     const positionCaps = await this.getRagePositionCaps()  // in USD
-
-    console.log('positionCaps', positionCaps)
-
     let positionCap = potentialArbSize >= 0 ? positionCaps.maxLong: positionCaps.maxShort
-    console.log('positionCap', positionCap)
-
     let maxSize = Math.min(
-        positionCap / Math.max(price, ftxEthPrice),
-        ftxMargin / Math.max(price, ftxEthPrice) / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
+        positionCap / Math.max(rageEthPrice, ftxEthPrice),
+        ftxMargin / Math.max(rageEthPrice, ftxEthPrice) / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
     )
 
+    console.log('positionCaps', positionCaps)
+    console.log('positionCap', positionCap)
     console.log('maxSize: ', maxSize)
 
     return Math.min(Math.abs(potentialArbSize), maxSize) * Math.sign(potentialArbSize)
@@ -170,10 +163,11 @@ export default class RageTrade {
 
   // for arb testnet, arbgas returned is 0, so making is constant(1$) for now
   async calculateTradeCost() {
-    // should query Arbitrum mainnet gas price or set conservative value (ie $5)
+    // should query Arbitrum mainnet gas price
     return 1
   }
 
+  /** calculates swap input and output tokens given trade size (if isNotional false, then potentialArbSize in ETH) */
   async simulateSwap(potentialArbSize: number, isNotional: boolean) {
     let arbSize
     isNotional
@@ -221,14 +215,15 @@ export default class RageTrade {
     return marketValueNotional / openPositionNotional
   }
 
+  /** returns the max position sizes bot can take (in USD) for both Long and Short directions */
   async getRagePositionCaps() {
-    const priceX128 = await (this.contracts
+    const priceX128 = await (this.contracts  // query current ETH twap price
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
       this.ammConfig.POOL_ID
     )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
-    const { marketValue } = await (this.contracts
+    const { marketValue } = await (this.contracts  // query Rage account current market value
       .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
       this.ammConfig.ACCOUNT_ID,
       false
@@ -242,33 +237,12 @@ export default class RageTrade {
     const { tokenPositions } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
 
-    const currentPosition = tokenPositions[0].netTraderPosition || 0
-    const currentPositionNotional =
-      Number(formatEther(currentPosition.abs())) * price
+    const currentPosition = tokenPositions[0].netTraderPosition || 0  // selects ETH position from positions
+    const currentPositionNotional = Number(formatEther(currentPosition.abs())) * price
+    const isLong = currentPosition.gte(0) ? 1: -1
 
-    let maxLong = 0,
-      maxShort = 0
-
-    if (currentPosition.gt(0)) {
-      maxLong =
-        marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD -
-        currentPositionNotional
-      maxShort =
-        marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD +
-        currentPositionNotional
-    } else if (currentPosition.lt(0)) {
-      maxLong =
-        marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD +
-        currentPositionNotional
-      maxShort =
-        marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD -
-        currentPositionNotional
-    } else {
-      maxLong =
-        marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
-      maxShort =
-        marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
-    }
+    const maxLong = marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD - currentPositionNotional * isLong
+    const maxShort = marketValueNotional / STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD + currentPositionNotional * isLong
 
     return {
       maxLong,

@@ -11,7 +11,7 @@ import { isMovementWithinSpread, calculateFinalPrice } from './helpers'
 const ftx = new Ftx()
 const rageTrade = new RageTrade()
 
-
+/** arbitrage entrypoint */
 const main = async () => {
   await ftx.initialize()
   await rageTrade.initialize()
@@ -22,6 +22,7 @@ const main = async () => {
   let pFtx = await ftx.queryFtxPrice()
   let pRage = await rageTrade.queryRagePrice()
 
+  /** calculates the size of the potential arbitrage in ETH */
   const calculateSizeOfArbitrage = async (
     pRage: number,
     pFtx: number,
@@ -32,13 +33,23 @@ const main = async () => {
       pFinal
     )
 
-    let ethTraded = - Number(formatEther(vTokenIn))  // opposite sign of entering pool
+    let maxEthPosition = - Number(formatEther(vTokenIn))  // max directional eth position to close price difference
 
     return {
-      ethTraded
+      maxEthPosition
     }
   }
 
+  /** calculates amount of tokens arb will make before gas cost */
+  const calculateArbRevenue = async(
+      pFtx: number,
+      potentialArbSize: number,
+      ethPriceReceived: number,
+  ) => {
+    return - potentialArbSize * (ethPriceReceived - pFtx * (1 - ftxFee * Math.sign(potentialArbSize)))
+  }
+
+  /** calculates arb trade USD profit */
   const calculateArbProfit = async (
     pFtx: number,
     potentialArbSize: number
@@ -49,19 +60,20 @@ const main = async () => {
     )
 
     const ethPriceReceived = Number(formatUsdc(vQuoteIn.abs())) / Math.abs(potentialArbSize)
-    let usdProfit = - potentialArbSize * (ethPriceReceived - pFtx * (1 - ftxFee * Math.sign(potentialArbSize)))
+    let usdRevenue = calculateArbRevenue(pFtx, potentialArbSize, ethPriceReceived)
+    const tradeCost = await rageTrade.calculateTradeCost()
 
     console.log('vTokenIn', formatEther(vTokenIn))
     console.log('vQuoteIn', formatUsdc(vQuoteIn))
     console.log('ethPriceReceived', ethPriceReceived)
     console.log('potentialArbSize (from calc arb profit)', potentialArbSize)
-    console.log('usdProfit', usdProfit)
+    console.log('usdRevenue', usdRevenue)
+    console.log('tradeCost', tradeCost)
 
-    const tradeCost = await rageTrade.calculateTradeCost()
-
-    return usdProfit - tradeCost
+    return usdRevenue - tradeCost
   }
 
+  /** checks for arb and if found, executes the arb */
   const arbitrage = async () => {
     pFtx = await ftx.queryFtxPrice()
     pRage = await rageTrade.queryRagePrice()
@@ -73,7 +85,7 @@ const main = async () => {
       return
     }
 
-    const {ethTraded: potentialArbSize} = await calculateSizeOfArbitrage(pRage, pFtx, pFinal)
+    const {maxEthPosition: potentialArbSize} = await calculateSizeOfArbitrage(pRage, pFtx, pFinal)
 
     const ftxMargin = await ftx.queryFtxMargin()
     const updatedArbSize = await rageTrade.calculateMaxTradeSize(
@@ -112,7 +124,7 @@ const main = async () => {
     arbitrage()
       .then(() => console.log('ARB COMPLETE!'))
       .catch((error) => {
-        console.log(error)
+        console.log(error.message)
       })
   })
 }
@@ -120,5 +132,5 @@ const main = async () => {
 main()
   .then(() => console.log('ARB STARTED!'))
   .catch((error) => {
-    console.log(error)
+    console.log(error.message)
   })
