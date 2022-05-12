@@ -6,7 +6,11 @@ import { log } from '../discord-logger'
 import { NETWORK_INF0, STRATERGY_CONFIG } from '../config'
 import { formatUsdc } from '@ragetrade/sdk'
 import { formatEther, parseEther } from 'ethers/lib/utils'
-import { isMovementWithinSpread, calculateFinalPrice, calculateArbRevenue } from './helpers'
+import {
+  isMovementWithinSpread,
+  calculateFinalPrice,
+  calculateArbRevenue,
+} from './helpers'
 
 const ftx = new Ftx()
 const rageTrade = new RageTrade()
@@ -30,30 +34,30 @@ const main = async () => {
     pFtx: number,
     pFinal: number
   ) => {
-    const { vTokenIn } = await rageTrade.getLiquidityInRange(
-      pRage,
-      pFinal
-    )
+    const { vTokenIn } = await rageTrade.getLiquidityInRange(pRage, pFinal)
 
-    let maxEthPosition = -Number(formatEther(vTokenIn))  // max directional eth position to close price difference
+    let maxEthPosition = -Number(formatEther(vTokenIn)) // max directional eth position to close price difference
 
     return {
-      maxEthPosition
+      maxEthPosition,
     }
   }
 
   /** calculates arb trade USD profit */
-  const calculateArbProfit = async (
-    pFtx: number,
-    potentialArbSize: number
-  ) => {
+  const calculateArbProfit = async (pFtx: number, potentialArbSize: number) => {
     const { vQuoteIn, vTokenIn } = await rageTrade.simulateSwap(
       potentialArbSize,
       false
     )
 
-    const ethPriceReceived = Number(formatUsdc(vQuoteIn.abs())) / Math.abs(potentialArbSize)
-    let usdRevenue = calculateArbRevenue(pFtx, potentialArbSize, ethPriceReceived, ftxFee)
+    const ethPriceReceived =
+      Number(formatUsdc(vQuoteIn.abs())) / Math.abs(potentialArbSize)
+    let usdRevenue = calculateArbRevenue(
+      pFtx,
+      potentialArbSize,
+      ethPriceReceived,
+      ftxFee
+    )
     const tradeCost = await rageTrade.calculateTradeCost()
 
     console.log('vTokenIn', formatEther(vTokenIn))
@@ -80,7 +84,11 @@ const main = async () => {
       return
     }
 
-    const { maxEthPosition: potentialArbSize } = await calculateSizeOfArbitrage(pRage, pFtx, pFinal)
+    const { maxEthPosition: potentialArbSize } = await calculateSizeOfArbitrage(
+      pRage,
+      pFtx,
+      pFinal
+    )
 
     const ftxMargin = await ftx.queryFtxMargin()
     const updatedArbSize = await rageTrade.calculateMaxTradeSize(
@@ -108,8 +116,7 @@ const main = async () => {
       try {
         await rageTrade.updatePosition(updatedArbSize)
         isSuccessful = true
-      }
-      catch (e) {
+      } catch (e) {
         isSuccessful = false
         await log(`error: ${e}, reversing position on ftx`, 'ARB_BOT')
         await ftx.updatePosition(-updatedArbSize)
@@ -120,8 +127,9 @@ const main = async () => {
         (await rageTrade.getRagePosition()).eth,
       ])
 
-      isSuccessful ? await log(
-        `arb successful,
+      isSuccessful
+        ? await log(
+            `arb successful,
         ftxNetSize: ${positionPostTrade.result[0].netSize},
         rageNetSize: ${ragePrice},
         ftxPrice: ${positionPostTrade.result[0].entryPrice},
@@ -130,8 +138,9 @@ const main = async () => {
         pFinal - pRage: ${pFinal - ragePrice},
         pFtx - pRage: ${positionPostTrade.result[0].entryPrice! - ragePrice}`,
 
-        'ARB_BOT'
-      ) : null
+            'ARB_BOT'
+          )
+        : null
     }
 
     cronMutex = false
@@ -151,7 +160,12 @@ const main = async () => {
 }
 
 main()
-  .then(() => log(`ARB BOT STARTED WITH FREQUENCY OF ${STRATERGY_CONFIG.FREQUENCY} seconds`, 'ARB_BOT'))
+  .then(() =>
+    log(
+      `ARB BOT STARTED WITH FREQUENCY OF ${STRATERGY_CONFIG.FREQUENCY} seconds`,
+      'ARB_BOT'
+    )
+  )
   .catch((error) => {
     console.log(error.message)
   })

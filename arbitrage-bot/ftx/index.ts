@@ -97,7 +97,7 @@ export default class Ftx {
         required: ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}`,
         'ARB_BOT'
       )
-      return  // should just turn off and turn back on next interval
+      return // should just turn off and turn back on next interval
     }
 
     if (
