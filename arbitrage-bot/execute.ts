@@ -129,31 +129,35 @@ const main = async () => {
 
       isSuccessful
         ? await log(
-            `arb successful,
+          `arb successful,
         ftxNetSize: ${positionPostTrade.result[0].netSize},
-        rageNetSize: ${ragePrice},
+        rageNetSize: ${ragePosition},
         ftxPrice: ${positionPostTrade.result[0].entryPrice},
-        ragePrice: ${ragePosition},
+        ragePrice: ${ragePrice},
         pFinal (expected): ${pFinal},
         pFinal - pRage: ${pFinal - ragePrice},
         pFtx - pRage: ${positionPostTrade.result[0].entryPrice! - ragePrice}`,
 
-            'ARB_BOT'
-          )
+          'ARB_BOT'
+        )
         : null
     }
 
-    cronMutex = false
   }
 
   cron.schedule(`*/${STRATERGY_CONFIG.FREQUENCY} * * * * *`, () => {
+    console.log('cronMutex', cronMutex)
     if (cronMutex) {
       log('SKIPPING ITERATION, BOT IS ALREADY ARBING', 'ARB_BOT')
       return
     }
     arbitrage()
-      .then(() => console.log('ARB COMPLETE!'))
+      .then(() => {
+        cronMutex = false
+        console.log('ARB COMPLETE!')
+      })
       .catch((error) => {
+        cronMutex = false
         console.log(error.message)
       })
   })
