@@ -31,14 +31,17 @@ export const calculateArbRevenue = (
   ethPriceReceived: number,
   ftxFee: number
 ) => {
-  return - potentialArbSize * (ethPriceReceived - pFtx * (1 - ftxFee * Math.sign(potentialArbSize)))
+  return (
+    -potentialArbSize *
+    (ethPriceReceived - pFtx * (1 - ftxFee * Math.sign(potentialArbSize)))
+  )
 }
 
 /** estimates profit from funding rate arb */
 export const estimateFundingArbProfit = (
-    arbSize: number,
-    fundingDifference: number,
-    tradeCost: number,
+  arbSize: number,
+  fundingDifference: number,
+  tradeCost: number
 ) => {
   return Math.abs(arbSize) * Math.abs(fundingDifference) - tradeCost
 }

@@ -130,12 +130,12 @@ export default class RageTrade {
 
     const { swapResult } = await (this.contracts
       .swapSimulator as SwapSimulator).callStatic.simulateSwap(
-        this.contracts.clearingHouse.address,
-        this.ammConfig.POOL_ID,
-        maxValue,
-        await priceToSqrtPriceX96(pFinal, 6, 18),
-        false
-      )
+      this.contracts.clearingHouse.address,
+      this.ammConfig.POOL_ID,
+      maxValue,
+      await priceToSqrtPriceX96(pFinal, 6, 18),
+      false
+    )
 
     return {
       vTokenIn: swapResult.vTokenIn,
@@ -156,8 +156,8 @@ export default class RageTrade {
     let maxSize = Math.min(
       positionCap / Math.max(rageEthPrice, ftxEthPrice),
       ftxMargin /
-      Math.max(rageEthPrice, ftxEthPrice) /
-      STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
+        Math.max(rageEthPrice, ftxEthPrice) /
+        STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD
     )
 
     console.log('positionCaps', positionCaps)
@@ -187,12 +187,12 @@ export default class RageTrade {
 
     const { swapResult } = await (this.contracts
       .swapSimulator as SwapSimulator).callStatic.simulateSwap(
-        this.contracts.clearingHouse.address,
-        this.ammConfig.POOL_ID,
-        arbSize,
-        0,
-        isNotional
-      )
+      this.contracts.clearingHouse.address,
+      this.ammConfig.POOL_ID,
+      arbSize,
+      0,
+      isNotional
+    )
 
     return {
       vTokenIn: swapResult.vTokenIn,
@@ -205,18 +205,23 @@ export default class RageTrade {
       .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-        this.ammConfig.POOL_ID
-      )
+      this.ammConfig.POOL_ID
+    )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
     const { marketValue } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
-        this.ammConfig.ACCOUNT_ID,
-        false
-      )
+      this.ammConfig.ACCOUNT_ID,
+      false
+    )
 
     const openPositionNotional =
-      Number(formatEther(account.tokenPositions[0]?.netTraderPosition.abs() || BigNumber.from(0))) * price
+      Number(
+        formatEther(
+          account.tokenPositions[0]?.netTraderPosition.abs() ||
+            BigNumber.from(0)
+        )
+      ) * price
 
     const marketValueNotional = Number(formatUsdc(marketValue.abs()))
 
@@ -227,15 +232,15 @@ export default class RageTrade {
   async getRagePositionCaps() {
     const priceX128 = await (this.contracts // query current ETH twap price
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-        this.ammConfig.POOL_ID
-      )
+      this.ammConfig.POOL_ID
+    )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
     const { marketValue } = await (this.contracts // query Rage account current market value
       .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
-        this.ammConfig.ACCOUNT_ID,
-        false
-      )
+      this.ammConfig.ACCOUNT_ID,
+      false
+    )
 
     if (marketValue.eq(0))
       throw new Error('Market value is 0, should not happend')
@@ -245,7 +250,8 @@ export default class RageTrade {
     const { tokenPositions } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
 
-    const currentPosition = tokenPositions[0]?.netTraderPosition || BigNumber.from(0) // selects ETH position from positions
+    const currentPosition =
+      tokenPositions[0]?.netTraderPosition || BigNumber.from(0) // selects ETH position from positions
     const currentPositionNotional =
       Number(formatEther(currentPosition.abs())) * price
     const isLong = currentPosition.gte(0) ? 1 : -1
@@ -267,21 +273,22 @@ export default class RageTrade {
   private async _simulatePostTrade(size: number) {
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-        this.ammConfig.POOL_ID
-      )
+      this.ammConfig.POOL_ID
+    )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
     const { marketValue } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
-        this.ammConfig.ACCOUNT_ID,
-        false
-      )
+      this.ammConfig.ACCOUNT_ID,
+      false
+    )
 
     const { tokenPositions } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
 
     const marketValueEth = Number(formatUsdc(marketValue)) / price
-    const currentPosition = tokenPositions[0]?.netTraderPosition || BigNumber.from(0)
+    const currentPosition =
+      tokenPositions[0]?.netTraderPosition || BigNumber.from(0)
     const currentPositionEth = Number(formatEther(currentPosition))
 
     const newMarginFraction: number =
@@ -324,16 +331,16 @@ export default class RageTrade {
 
     const trade = await (this.contracts
       .clearingHouse as ClearingHouse).swapToken(
-        this.ammConfig.ACCOUNT_ID,
-        this.ammConfig.POOL_ID,
-        {
-          amount: amount,
-          sqrtPriceLimit: 0,
-          isNotional: false,
-          settleProfit: false,
-          isPartialAllowed: false,
-        }
-      )
+      this.ammConfig.ACCOUNT_ID,
+      this.ammConfig.POOL_ID,
+      {
+        amount: amount,
+        sqrtPriceLimit: 0,
+        isNotional: false,
+        settleProfit: false,
+        isPartialAllowed: false,
+      }
+    )
 
     await trade.wait()
     return trade
@@ -345,8 +352,8 @@ export default class RageTrade {
       .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-        this.ammConfig.POOL_ID
-      )
+      this.ammConfig.POOL_ID
+    )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
     const position = tokenPositions[0]?.netTraderPosition || BigNumber.from(0)
