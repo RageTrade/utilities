@@ -130,29 +130,37 @@ async function main() {
 
   // console.log(formatEther(swapResult.vTokenIn))
 
+  const addrs = await getVaultContracts(
+    new Wallet(
+      NETWORK_INF0.PRIVATE_KEY,
+      new providers.WebSocketProvider(
+        NETWORK_INF0.WSS_RPC_URL,
+        NETWORK_INF0.CHAIN_ID
+      )
+    )
+  )
 
+  const addrs2 = await getContracts(
+    new Wallet(
+      NETWORK_INF0.PRIVATE_KEY,
+      new providers.WebSocketProvider(
+        NETWORK_INF0.WSS_RPC_URL,
+        NETWORK_INF0.CHAIN_ID
+      )
+    )
+  )
 
-  const addrs = (await
-    getVaultContracts(
-      new Wallet(NETWORK_INF0.PRIVATE_KEY,
+  const vault = await (
+    await getVaultContracts(
+      new Wallet(
+        NETWORK_INF0.PRIVATE_KEY,
         new providers.WebSocketProvider(
           NETWORK_INF0.WSS_RPC_URL,
           NETWORK_INF0.CHAIN_ID
-        ))))
-
-  const addrs2 = (await
-    getContracts(
-      new Wallet(NETWORK_INF0.PRIVATE_KEY,
-        new providers.WebSocketProvider(
-          NETWORK_INF0.WSS_RPC_URL,
-          NETWORK_INF0.CHAIN_ID
-        ))))
-
-  const vault = await (await getVaultContracts(new Wallet(NETWORK_INF0.PRIVATE_KEY,
-    new providers.WebSocketProvider(
-      NETWORK_INF0.WSS_RPC_URL,
-      NETWORK_INF0.CHAIN_ID
-    )))).curveYieldStrategy
+        )
+      )
+    )
+  ).curveYieldStrategy
 
   const accNo = await getLatestAccountNumber(vault.address)
 
@@ -180,12 +188,21 @@ async function main() {
 
   const {
     collateralTokenBalance,
-    settlementTokenBalance
-  } = await getRealTokenBalances(rt.clearingHouse, accNo, addrs.collateralToken.address, addrs2.settlementToken.address)
+    settlementTokenBalance,
+  } = await getRealTokenBalances(
+    rt.clearingHouse,
+    accNo,
+    addrs.collateralToken.address,
+    addrs2.settlementToken.address
+  )
   console.log('collateralTokenBalance', collateralTokenBalance.toString())
   console.log('settlementTokenBalance', settlementTokenBalance.toString())
 
-  const z = await getNetTokenPosition(rt.clearingHouse, accNo, AMM_CONFIG.POOL_ID)
+  const z = await getNetTokenPosition(
+    rt.clearingHouse,
+    accNo,
+    AMM_CONFIG.POOL_ID
+  )
   console.log('netTokenPostion', z.toString())
 }
 

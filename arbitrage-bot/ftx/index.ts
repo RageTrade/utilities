@@ -55,7 +55,7 @@ export default class Ftx {
   }
 
   private async _updateCurrentFundingRate() {
-    this.currentFundingRate = await this._estimateFundingFees(1, 1)  // estimates funding rate
+    this.currentFundingRate = await this._estimateFundingFees(1, 1) // estimates funding rate
     console.log(this.currentFundingRate)
   }
 
