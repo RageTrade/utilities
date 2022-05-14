@@ -36,7 +36,6 @@ export const calculateArbRevenue = (
     (ethPriceReceived - pFtx * (1 - ftxFee * Math.sign(potentialArbSize)))
   )
 }
-<<<<<<< HEAD
 
 /** estimates profit from funding rate arb */
 export const estimateFundingArbProfit = (
@@ -46,5 +45,3 @@ export const estimateFundingArbProfit = (
 ) => {
   return Math.abs(arbSize) * Math.abs(fundingDifference) - tradeCost
 }
-=======
->>>>>>> bd8efd5 (fix: linting)
