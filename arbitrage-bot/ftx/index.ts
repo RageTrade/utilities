@@ -29,7 +29,7 @@ export default class Ftx {
 
   async initialize() {
     await this._preFlightChecks()
-    setInterval(async () => this._updateCurrentFundingRate, 5 * 60 * 100)
+    setInterval(async () => this._updateCurrentFundingRate(), 5 * 60 * 100)
   }
 
   private _scaleDown(size: number) {
@@ -40,22 +40,21 @@ export default class Ftx {
     return size * FTX_CONFIG.SCALING_FACTOR
   }
 
-  private async _estimateFundingFees(netSize: number, price: number) {
+  // +ve => longs pays short
+  async _estimateFundingFees() {
     const now = Math.floor(new Date().getTime() / 1000)
 
     const fundingPayment = await this.ftxClient.getFundingPayments({
-      start_time: now - 3600,
+      start_time: now - 60 * 60 * 8,
       end_time: now,
       future: this.marketId,
     })
 
-    const totalFp = fundingPayment.result[0].rate * netSize * price
-
-    return totalFp
+    return fundingPayment.result[0].rate
   }
 
   private async _updateCurrentFundingRate() {
-    this.currentFundingRate = await this._estimateFundingFees(1, 1) // estimates funding rate
+    this.currentFundingRate = await this._estimateFundingFees() // estimates funding rate
     console.log(this.currentFundingRate)
   }
 
@@ -74,7 +73,7 @@ export default class Ftx {
     const unrealizedPnl =
       netSize * (currentPrice - avgOpenPrice) -
       netSize * this.takerFee -
-      (await this._estimateFundingFees(netSize, currentPrice))
+      (await this._estimateFundingFees())
 
     const scaled = this._scaleUp(unrealizedPnl)
 

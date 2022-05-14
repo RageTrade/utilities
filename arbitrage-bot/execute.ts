@@ -12,6 +12,12 @@ import {
   calculateArbRevenue,
 } from './helpers'
 
+// fix partial
+// pre-flight checks
+// open github issues (possible optimizations)
+// sync config and config.sample
+// multiple private keys
+
 const ftx = new Ftx()
 const rageTrade = new RageTrade()
 

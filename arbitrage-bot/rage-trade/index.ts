@@ -51,8 +51,8 @@ export default class RageTrade {
     await this._setupContracts()
     await this._preFlightChecks()
 
-    setInterval(async () => this._checkBlockFreshness, 10 * 60 * 100)
-    setInterval(async () => this._updateCurrentFundingRate, 5 * 60 * 100)
+    setInterval(async () => this._checkBlockFreshness(), 10 * 60 * 100)
+    setInterval(async () => this._updateCurrentFundingRate(), 5 * 60 * 100)
 
     this.isInitialized = true
   }
@@ -93,6 +93,7 @@ export default class RageTrade {
       throw new Error('Stale block/state or provider is lagging')
   }
 
+  // past 8 hours funding paid/received
   private async _updateCurrentFundingRate() {
     const [chainlinkTWAP, perpTWAP] = await Promise.all([
       (this.contracts.clearingHouse as ClearingHouse).getRealTwapPriceX128(
