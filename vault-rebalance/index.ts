@@ -1,24 +1,25 @@
+import cron from 'node-cron'
+
 import { ethers } from 'ethers'
-import { getVaultContracts } from '@ragetrade/sdk'
+import { CurveYieldStrategy, getVaultContracts } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config'
 
-import cron from 'node-cron'
-
 let isReset: boolean
+let vault: CurveYieldStrategy
+
+const provider = new ethers.providers.StaticJsonRpcProvider(
+  NETWORK_INF0.HTTP_RPC_URL
+)
+const signer = new ethers.Wallet(NETWORK_INF0.PRIVATE_KEY, provider)
+
+getVaultContracts(signer).then(
+  (contracts) => (vault = contracts.curveYieldStrategy)
+)
 
 const rebalance = async () => {
   console.log('REBALANCE RUN STARTED!')
-
-  const provider = new ethers.providers.AlchemyWebSocketProvider(
-    NETWORK_INF0.CHAIN_ID,
-    NETWORK_INF0.ALCHEMY_API_KEY
-  )
-
-  const signer = new ethers.Wallet(NETWORK_INF0.PRIVATE_KEY, provider)
-
-  const vault = (await getVaultContracts(signer)).curveYieldStrategy
 
   const isValidRebalance = await vault.isValidRebalance(
     await vault.getVaultMarketValue()
@@ -46,15 +47,6 @@ const rebalance = async () => {
 const closeTokenPosition = async () => {
   console.log('CLOSE TOKEN POSITION RUN STARTED!')
 
-  const provider = new ethers.providers.AlchemyWebSocketProvider(
-    NETWORK_INF0.CHAIN_ID,
-    NETWORK_INF0.ALCHEMY_API_KEY
-  )
-
-  const signer = new ethers.Wallet(NETWORK_INF0.PRIVATE_KEY, provider)
-
-  const vault = (await getVaultContracts(signer)).curveYieldStrategy
-
   const tx = await vault.closeTokenPosition()
   await tx.wait()
 
@@ -68,6 +60,8 @@ const closeTokenPosition = async () => {
 }
 
 cron.schedule('*/30 * * * * *', () => {
+  if (isReset) return
+
   rebalance()
     .then(() => console.log('REBALANCE RUN COMPLETE!'))
     .catch((error) => {
