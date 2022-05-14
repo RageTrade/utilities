@@ -1,12 +1,13 @@
 import Ftx from './ftx'
 import cron from 'node-cron'
-import { OrderSide } from 'ftx-api'
 import RageTrade from './rage-trade'
 import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config'
-import { formatUsdc } from '@ragetrade/sdk'
-import { formatEther, parseEther } from 'ethers/lib/utils'
+import { formatEther } from 'ethers/lib/utils'
 import { estimateFundingArbProfit } from './helpers'
+
+// past '10' min MA on rage
+// test
 
 const ftx = new Ftx()
 const rageTrade = new RageTrade()
@@ -22,6 +23,7 @@ const main = async () => {
 
   let pFtx = await ftx.queryFtxPrice()
   let pRage = await rageTrade.queryRagePrice()
+
   console.log('currentFundingRate', rageTrade.currentFundingRate)
   let rageFunding = rageTrade.currentFundingRate
   let ftxFunding = ftx.currentFundingRate // make the same units as rageFunding
@@ -40,10 +42,7 @@ const main = async () => {
 
     let maxEthPosition = 0
     if ((pFinal - pRage) * fundingSign > 0) {
-      const { vQuoteIn, vTokenIn } = await rageTrade.getLiquidityInRange(
-        pRage,
-        pFtx
-      )
+      const { vTokenIn } = await rageTrade.getLiquidityInRange(pRage, pFtx)
       maxEthPosition = -Number(formatEther(vTokenIn)) // max directional eth position
     }
 

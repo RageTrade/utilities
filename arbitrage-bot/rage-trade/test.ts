@@ -12,7 +12,6 @@ import {
 import { providers, Wallet, BigNumber, BigNumberish } from 'ethers'
 import { formatEther, parseEther } from 'ethers/lib/utils'
 import { AMM_CONFIG, NETWORK_INF0, STRATERGY_CONFIG } from '../../config'
-import { getLatestAccountNumber } from '../../keeper-liquidation/common'
 import { calculateFinalPrice, isMovementWithinSpread } from '../helpers'
 import RageTrade from './index'
 
@@ -162,7 +161,9 @@ async function main() {
     )
   ).curveYieldStrategy
 
-  const accNo = await getLatestAccountNumber(vault.address)
+  const accNo = BigNumber.from(0)
+
+  console.log('reset', await vault.isReset())
 
   const {
     tickLower,
