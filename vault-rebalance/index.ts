@@ -12,7 +12,10 @@ let vault: CurveYieldStrategy
 const provider = new ethers.providers.StaticJsonRpcProvider(
   NETWORK_INF0.HTTP_RPC_URL
 )
-const signer = new ethers.Wallet(NETWORK_INF0.PRIVATE_KEY, provider)
+const signer = new ethers.Wallet(NETWORK_INF0.PK_VAULT_REBALANCE, provider)
+
+const TOKEN_POSITION_CLOSED =
+  '0x9a94a63b02012d6753ed863b962aceb756429b4265fc327391dd05fb24d4502b'
 
 getVaultContracts(signer).then(
   (contracts) => (vault = contracts.curveYieldStrategy)
@@ -27,12 +30,18 @@ const rebalance = async () => {
 
   if (isValidRebalance) {
     const tx = await vault.rebalance()
-    await tx.wait()
+    const receipt = await tx.wait()
 
     await log(
       `rebalanced! ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx.hash}`,
       'REBALANCE'
     )
+
+    for (const each of receipt.logs) {
+      if (each.topics[0] == TOKEN_POSITION_CLOSED) {
+        await log('reset happend internally during rebalance', 'REBALANCE')
+      }
+    }
   } else {
     await log(
       'not a valid rebalance condition, skipping rebalance...',
