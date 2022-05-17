@@ -16,9 +16,11 @@ async function main() {
   // )
   // console.log(await ftx.queryFtxPosition())
   // console.log(await ftx.queryFtxAccount())
-  // console.log(await ftx.updatePosition(0.368 * 1000))
+  // console.log(await ftx.updatePosition(-0.914 * 1000))
 
-  console.log(await ftx._estimateFundingFees())
+  console.log(await ftx._updateCurrentFundingRate())
+  console.log('currentFundingRate', ftx.currentFundingRate)
+  console.log('netNotionalFundingPaid', ftx.netNotionalFundingPaid)
 }
 
 main()
