@@ -2,7 +2,12 @@ import Ftx from './ftx'
 import cron from 'node-cron'
 import RageTrade from './rage-trade'
 import { log } from '../discord-logger'
-import { NETWORK_INF0 } from '../config'
+import {
+  AMM_CONFIG,
+  FTX_CONFIG,
+  NETWORK_INF0,
+  STRATERGY_CONFIG,
+} from '../config'
 import { formatEther } from 'ethers/lib/utils'
 import { estimateFundingArbProfit } from './helpers'
 
@@ -10,15 +15,15 @@ import { estimateFundingArbProfit } from './helpers'
 // test
 
 const ftx = new Ftx()
-const rageTrade = new RageTrade()
+const rageTrade = new RageTrade(false)
 
 /** arbitrage entrypoint */
 const main = async () => {
   await ftx.initialize()
   await rageTrade.initialize()
 
-  const ftxFee = ftx.takerFee
-  const rageFee = rageTrade.ammConfig.FEE
+  const ftxFee = FTX_CONFIG.FEE
+  const rageFee = AMM_CONFIG.FEE
   const minimumFundingDifferenceThresh = 0.001
 
   let pFtx = await ftx.queryFtxPrice()
@@ -94,7 +99,7 @@ const main = async () => {
       tradeCost
     )
 
-    if (estimatedArbProfit > rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT) {
+    if (estimatedArbProfit > STRATERGY_CONFIG.MIN_NOTIONAL_PROFIT) {
       const x = await ftx.updatePosition(updatedArbSize)
       const y = await rageTrade.updatePosition(updatedArbSize)
 

@@ -3,7 +3,12 @@ import cron from 'node-cron'
 import { OrderSide } from 'ftx-api'
 import RageTrade from './rage-trade'
 import { log } from '../discord-logger'
-import { NETWORK_INF0, STRATERGY_CONFIG } from '../config'
+import {
+  AMM_CONFIG,
+  FTX_CONFIG,
+  NETWORK_INF0,
+  STRATERGY_CONFIG,
+} from '../config'
 import { formatUsdc } from '@ragetrade/sdk'
 import { formatEther, parseEther } from 'ethers/lib/utils'
 import {
@@ -19,7 +24,7 @@ import {
 // multiple private keys
 
 const ftx = new Ftx()
-const rageTrade = new RageTrade()
+const rageTrade = new RageTrade(true)
 
 /** arbitrage entrypoint */
 const main = async () => {
@@ -28,8 +33,8 @@ const main = async () => {
   await ftx.initialize()
   await rageTrade.initialize()
 
-  const ftxFee = ftx.takerFee
-  const rageFee = rageTrade.ammConfig.FEE
+  const ftxFee = FTX_CONFIG.FEE
+  const rageFee = AMM_CONFIG.FEE
 
   let pFtx = await ftx.queryFtxPrice()
   let pRage = await rageTrade.queryRagePrice()
@@ -115,7 +120,7 @@ const main = async () => {
       Number(updatedArbSize.toFixed(6))
     )
 
-    if (potentialArbProfit > rageTrade.stratergyConfig.MIN_NOTIONAL_PROFIT) {
+    if (potentialArbProfit > STRATERGY_CONFIG.MIN_NOTIONAL_PROFIT) {
       let isSuccessful = false
       const positionPostTrade = await ftx.updatePosition(updatedArbSize)
 

@@ -1,17 +1,20 @@
 import {
   ClearingHouse,
+  findBlockByTimestamp,
   formatUsdc,
+  fromQ128,
   getContracts,
   parseUsdc,
   priceToSqrtPriceX96,
   priceX128ToPrice,
+  Q128,
   sqrtPriceX96ToPrice,
+  VPoolWrapper,
   SwapSimulator,
 } from '@ragetrade/sdk'
 import { IUniswapV3Pool } from '@ragetrade/sdk/dist/typechain/vaults'
 import { BigNumber, providers, Wallet } from 'ethers'
 import { formatEther, parseEther } from 'ethers/lib/utils'
-import { OrderSide } from 'ftx-api'
 import {
   AMM_CONFIG,
   NETWORK_INF0,
@@ -27,21 +30,22 @@ export default class RageTrade {
   private isInitialized = false
 
   public currentFundingRate = 0
+  public netNotionalFundingPaid = 0
 
   private contracts: any
 
-  constructor(
-    readonly ammConfig = AMM_CONFIG,
-    readonly networkInfo = NETWORK_INF0,
-    readonly preFlightCheck = PRE_FLIGHT_CHECK,
-    readonly stratergyConfig = STRATERGY_CONFIG
-  ) {
-    this.provider = new providers.WebSocketProvider(
-      this.networkInfo.WSS_RPC_URL,
-      this.networkInfo.CHAIN_ID
+  constructor(isPriceArb: boolean) {
+    this.provider = new providers.AlchemyWebSocketProvider(
+      NETWORK_INF0.ALCHEMY_API_KEY,
+      NETWORK_INF0.CHAIN_ID
     )
 
-    this.wallet = new Wallet(this.networkInfo.PRIVATE_KEY, this.provider)
+    isPriceArb
+      ? (this.wallet = new Wallet(NETWORK_INF0.PK_PRICE_ARB_BOT, this.provider))
+      : (this.wallet = new Wallet(
+          NETWORK_INF0.PK_FUNDING_ARB_BOT,
+          this.provider
+        ))
   }
 
   async initialize() {
@@ -65,14 +69,14 @@ export default class RageTrade {
   private async _preFlightChecks() {
     if (
       (await this.wallet.getBalance()).toBigInt() <
-      this.preFlightCheck.ARB_ETH_BAL_THRESHOLD
+      PRE_FLIGHT_CHECK.ARB_ETH_BAL_THRESHOLD
     ) {
       await log('Arbitrum account out of gas', 'ARB_BOT')
       throw new Error('Arbitrum account out of gas')
     }
 
     const accInfo = await this.contracts.clearingHouse.getAccountInfo(
-      this.ammConfig.ACCOUNT_ID
+      AMM_CONFIG.ACCOUNT_ID
     )
 
     if (accInfo.owner != this.wallet.address) {
@@ -87,29 +91,55 @@ export default class RageTrade {
     )
     const diffNowSeconds = Math.floor(Date.now() / 1000) - latestBlock.timestamp
 
-    if (
-      diffNowSeconds > this.preFlightCheck.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD
-    )
+    if (diffNowSeconds > PRE_FLIGHT_CHECK.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
       throw new Error('Stale block/state or provider is lagging')
   }
 
   // past 8 hours funding paid/received
-  private async _updateCurrentFundingRate() {
-    const [chainlinkTWAP, perpTWAP] = await Promise.all([
-      (this.contracts.clearingHouse as ClearingHouse).getRealTwapPriceX128(
-        this.ammConfig.POOL_ID
-      ),
-      (this.contracts.clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-        this.ammConfig.POOL_ID
-      ),
-    ])
+  // private async _updateCurrentFundingRate() {
+  //   const [chainlinkTWAP, perpTWAP] = await Promise.all([
+  //     (this.contracts.clearingHouse as ClearingHouse).getRealTwapPriceX128(
+  //       AMM_CONFIG.POOL_ID
+  //     ),
+  //     (this.contracts.clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
+  //       AMM_CONFIG.POOL_ID
+  //     ),
+  //   ])
 
-    const num1 = Number(formatEther(chainlinkTWAP))
-    const num2 = Number(formatEther(perpTWAP))
+  //   const num1 = Number(formatEther(chainlinkTWAP))
+  //   const num2 = Number(formatEther(perpTWAP))
 
-    this.currentFundingRate = (num2 - num1) / num1 / 24
+  //   this.currentFundingRate = (num2 - num1) / num1 / 24
 
-    console.log(this.currentFundingRate)
+  //   console.log(this.currentFundingRate)
+  // }
+
+  // +ve long pays short
+  async _updateCurrentFundingRate() {
+    // const sumAX128 = await this.contracts.eth_vPoolWrapper.getExtrapolatedSumAX128();
+    // const currentTimestamp = Math.floor(Date.now() / 1000);
+    // const block = await findBlockByTimestamp(this.provider, currentTimestamp - 60 * 60);
+    // const sumAOldX128 = await this.contracts.eth_vPoolWrapper.getExtrapolatedSumAX128({
+    //   blockTag: block.number,
+    // });
+    // const priceX128 = await this.contracts.eth_oracle.getTwapPriceX128(60 * 60);
+
+    // this.currentFundingRate = fromQ128(
+    //   sumAX128
+    //     .sub(sumAOldX128)
+    //     .mul(Q128)
+    //     .div(priceX128)
+    //     .div(currentTimestamp - block.timestamp)
+    // ) * -1 * 60 * 60
+
+    const { eth_vPoolWrapper } = this.contracts
+
+    const {
+      fundingRateX128,
+    } = await (eth_vPoolWrapper as VPoolWrapper).getFundingRateAndVirtualPrice()
+    const fundingRatePerSecond = fromQ128(fundingRateX128)
+
+    console.log(-fundingRatePerSecond * 60 * 60)
   }
 
   // add deviation check
@@ -132,7 +162,7 @@ export default class RageTrade {
     const { swapResult } = await (this.contracts
       .swapSimulator as SwapSimulator).callStatic.simulateSwap(
       this.contracts.clearingHouse.address,
-      this.ammConfig.POOL_ID,
+      AMM_CONFIG.POOL_ID,
       maxValue,
       await priceToSqrtPriceX96(pFinal, 6, 18),
       false
@@ -189,7 +219,7 @@ export default class RageTrade {
     const { swapResult } = await (this.contracts
       .swapSimulator as SwapSimulator).callStatic.simulateSwap(
       this.contracts.clearingHouse.address,
-      this.ammConfig.POOL_ID,
+      AMM_CONFIG.POOL_ID,
       arbSize,
       0,
       isNotional
@@ -203,16 +233,16 @@ export default class RageTrade {
 
   private async _currentMarginFraction() {
     const account = await (this.contracts
-      .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
+      .clearingHouse as ClearingHouse).getAccountInfo(AMM_CONFIG.ACCOUNT_ID)
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-      this.ammConfig.POOL_ID
+      AMM_CONFIG.POOL_ID
     )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
     const { marketValue } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
-      this.ammConfig.ACCOUNT_ID,
+      AMM_CONFIG.ACCOUNT_ID,
       false
     )
 
@@ -233,13 +263,13 @@ export default class RageTrade {
   async getRagePositionCaps() {
     const priceX128 = await (this.contracts // query current ETH twap price
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-      this.ammConfig.POOL_ID
+      AMM_CONFIG.POOL_ID
     )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
     const { marketValue } = await (this.contracts // query Rage account current market value
       .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
-      this.ammConfig.ACCOUNT_ID,
+      AMM_CONFIG.ACCOUNT_ID,
       false
     )
 
@@ -249,7 +279,7 @@ export default class RageTrade {
     const marketValueNotional = Number(formatUsdc(marketValue))
 
     const { tokenPositions } = await (this.contracts
-      .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
+      .clearingHouse as ClearingHouse).getAccountInfo(AMM_CONFIG.ACCOUNT_ID)
 
     const currentPosition =
       tokenPositions[0]?.netTraderPosition || BigNumber.from(0) // selects ETH position from positions
@@ -274,18 +304,18 @@ export default class RageTrade {
   private async _simulatePostTrade(size: number) {
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-      this.ammConfig.POOL_ID
+      AMM_CONFIG.POOL_ID
     )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
     const { marketValue } = await (this.contracts
       .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
-      this.ammConfig.ACCOUNT_ID,
+      AMM_CONFIG.ACCOUNT_ID,
       false
     )
 
     const { tokenPositions } = await (this.contracts
-      .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
+      .clearingHouse as ClearingHouse).getAccountInfo(AMM_CONFIG.ACCOUNT_ID)
 
     const marketValueEth = Number(formatUsdc(marketValue)) / price
     const currentPosition =
@@ -332,8 +362,8 @@ export default class RageTrade {
 
     const trade = await (this.contracts
       .clearingHouse as ClearingHouse).swapToken(
-      this.ammConfig.ACCOUNT_ID,
-      this.ammConfig.POOL_ID,
+      AMM_CONFIG.ACCOUNT_ID,
+      AMM_CONFIG.POOL_ID,
       {
         amount: amount,
         sqrtPriceLimit: 0,
@@ -350,10 +380,10 @@ export default class RageTrade {
   /** gets Rage position in both ETH and USD terms */
   async getRagePosition() {
     const { tokenPositions } = await (this.contracts
-      .clearingHouse as ClearingHouse).getAccountInfo(this.ammConfig.ACCOUNT_ID)
+      .clearingHouse as ClearingHouse).getAccountInfo(AMM_CONFIG.ACCOUNT_ID)
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-      this.ammConfig.POOL_ID
+      AMM_CONFIG.POOL_ID
     )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 

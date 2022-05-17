@@ -2,6 +2,8 @@ import { log } from '../../discord-logger'
 import { FTX_CONFIG, PRE_FLIGHT_CHECK, STRATERGY_CONFIG } from '../../config'
 import { AccountSummary, FuturesPosition, OrderSide, RestClient } from 'ftx-api'
 
+// track avg position size
+
 export default class Ftx {
   private marketId
   private ftxClient
@@ -10,7 +12,8 @@ export default class Ftx {
 
   public hasOpenPosition: boolean
 
-  public currentFundingRate = 0
+  public currentFundingRate = 0 // weighted based on past 8 hours
+  public netNotionalFundingPaid = 0
 
   constructor() {
     this.ftxClient = new RestClient(
@@ -41,21 +44,41 @@ export default class Ftx {
   }
 
   // +ve => longs pays short
-  async _estimateFundingFees() {
+  async _updateCurrentFundingRate() {
     const now = Math.floor(new Date().getTime() / 1000)
 
-    const fundingPayment = await this.ftxClient.getFundingPayments({
-      start_time: now - 60 * 60 * 8,
-      end_time: now,
-      future: this.marketId,
-    })
+    // const fundingPayment = await this.ftxClient.getFundingPayments({
+    //   start_time: now - 8 * 60 * 60,
+    //   end_time: now,
+    //   future: this.marketId,
+    // })
 
-    return fundingPayment.result[0].rate
-  }
+    const markets = (await this.ftxClient.getFundingRates()).result
 
-  private async _updateCurrentFundingRate() {
-    this.currentFundingRate = await this._estimateFundingFees() // estimates funding rate
-    console.log(this.currentFundingRate)
+    let first
+
+    for (const each of markets) {
+      if (each.future == 'ETH-PERP') {
+        first = each.rate
+        break
+      }
+    }
+
+    console.log(first)
+
+    const position = await this.queryFtxPosition()
+
+    let netNotionalFunding = 0
+
+    // for (const each of fundingPayment.result) {
+    //   netNotionalFunding += each.payment
+    // }
+
+    this.netNotionalFundingPaid = netNotionalFunding
+
+    position.cost == 0
+      ? (this.currentFundingRate = 0)
+      : (this.currentFundingRate = netNotionalFunding / position.cost)
   }
 
   async netProfit() {
@@ -71,9 +94,7 @@ export default class Ftx {
     const currentPrice = await this.queryFtxPrice()
 
     const unrealizedPnl =
-      netSize * (currentPrice - avgOpenPrice) -
-      netSize * this.takerFee -
-      (await this._estimateFundingFees())
+      netSize * (currentPrice - avgOpenPrice) - netSize * this.takerFee
 
     const scaled = this._scaleUp(unrealizedPnl)
 
@@ -119,7 +140,7 @@ export default class Ftx {
 
   async queryFtxPrice() {
     return ((await this.ftxClient.getFuture(this.marketId)) as any).result!
-      .mark!
+      .mark! as number
   }
 
   async queryFtxMargin() {

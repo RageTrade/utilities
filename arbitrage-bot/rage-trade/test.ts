@@ -59,7 +59,7 @@ export async function getNetTokenPosition(
 }
 
 async function main() {
-  const rageTrade = new RageTrade()
+  const rageTrade = new RageTrade(false)
   await rageTrade.initialize()
 
   // console.log(rageTrade.currentFundingRate)
@@ -79,15 +79,15 @@ async function main() {
   // console.log('pFinal', pFinal)
   // console.log(isMovementWithinSpread(2308, 2117.69, pFinal))
 
-  const rt = await getContracts(
-    new Wallet(
-      NETWORK_INF0.PRIVATE_KEY,
-      new providers.WebSocketProvider(
-        NETWORK_INF0.WSS_RPC_URL,
-        NETWORK_INF0.CHAIN_ID
-      )
-    )
-  )
+  // const rt = await getContracts(
+  //   new Wallet(
+  //     NETWORK_INF0.PRIVATE_KEY,
+  //     new providers.WebSocketProvider(
+  //       NETWORK_INF0.WSS_RPC_URL,
+  //       NETWORK_INF0.CHAIN_ID
+  //     )
+  //   )
+  // )
 
   // const markPrice = await rageTrade.queryRagePrice()
   // const indexPrice = await priceX128ToPrice(
@@ -129,82 +129,85 @@ async function main() {
 
   // console.log(formatEther(swapResult.vTokenIn))
 
-  const addrs = await getVaultContracts(
-    new Wallet(
-      NETWORK_INF0.PRIVATE_KEY,
-      new providers.WebSocketProvider(
-        NETWORK_INF0.WSS_RPC_URL,
-        NETWORK_INF0.CHAIN_ID
-      )
-    )
-  )
+  // const addrs = await getVaultContracts(
+  //   new Wallet(
+  //     NETWORK_INF0.PRIVATE_KEY,
+  //     new providers.WebSocketProvider(
+  //       NETWORK_INF0.WSS_RPC_URL,
+  //       NETWORK_INF0.CHAIN_ID
+  //     )
+  //   )
+  // )
 
-  const addrs2 = await getContracts(
-    new Wallet(
-      NETWORK_INF0.PRIVATE_KEY,
-      new providers.WebSocketProvider(
-        NETWORK_INF0.WSS_RPC_URL,
-        NETWORK_INF0.CHAIN_ID
-      )
-    )
-  )
+  // const addrs2 = await getContracts(
+  //   new Wallet(
+  //     NETWORK_INF0.PRIVATE_KEY,
+  //     new providers.WebSocketProvider(
+  //       NETWORK_INF0.WSS_RPC_URL,
+  //       NETWORK_INF0.CHAIN_ID
+  //     )
+  //   )
+  // )
 
-  const vault = await (
-    await getVaultContracts(
-      new Wallet(
-        NETWORK_INF0.PRIVATE_KEY,
-        new providers.WebSocketProvider(
-          NETWORK_INF0.WSS_RPC_URL,
-          NETWORK_INF0.CHAIN_ID
-        )
-      )
-    )
-  ).curveYieldStrategy
+  // const vault = await (
+  //   await getVaultContracts(
+  //     new Wallet(
+  //       NETWORK_INF0.PRIVATE_KEY,
+  //       new providers.WebSocketProvider(
+  //         NETWORK_INF0.WSS_RPC_URL,
+  //         NETWORK_INF0.CHAIN_ID
+  //       )
+  //     )
+  //   )
+  // ).curveYieldStrategy
 
-  const accNo = BigNumber.from(0)
+  // const accNo = BigNumber.from(0)
 
-  console.log('reset', await vault.isReset())
+  // console.log('reset', await vault.isReset())
 
-  const {
-    tickLower,
-    tickUpper,
-    liquidity,
-    vTokenAmountIn,
-    sumALastX128,
-    sumBInsideLastX128,
-    sumFpInsideLastX128,
-    sumFeeInsideLastX128,
-    limitOrderType,
-  } = await getLiquidityPosition(rt.clearingHouse, accNo, 0, 0)
+  // const {
+  //   tickLower,
+  //   tickUpper,
+  //   liquidity,
+  //   vTokenAmountIn,
+  //   sumALastX128,
+  //   sumBInsideLastX128,
+  //   sumFpInsideLastX128,
+  //   sumFeeInsideLastX128,
+  //   limitOrderType,
+  // } = await getLiquidityPosition(rt.clearingHouse, accNo, 0, 0)
 
-  console.log('tickLower', tickLower.toString())
-  console.log('tickUpper', tickUpper.toString())
-  console.log('liquidity', liquidity.toString())
-  console.log('vTokenAmountIn', vTokenAmountIn.toString())
-  console.log('sumALastX128', sumALastX128.toString())
-  console.log('sumBInsideLastX128', sumBInsideLastX128.toString())
-  console.log('sumFpInsideLastX128', sumFpInsideLastX128.toString())
-  console.log('sumFeeInsideLastX128', sumFeeInsideLastX128.toString())
-  console.log('limitOrderType', limitOrderType.toString())
+  // console.log('tickLower', tickLower.toString())
+  // console.log('tickUpper', tickUpper.toString())
+  // console.log('liquidity', liquidity.toString())
+  // console.log('vTokenAmountIn', vTokenAmountIn.toString())
+  // console.log('sumALastX128', sumALastX128.toString())
+  // console.log('sumBInsideLastX128', sumBInsideLastX128.toString())
+  // console.log('sumFpInsideLastX128', sumFpInsideLastX128.toString())
+  // console.log('sumFeeInsideLastX128', sumFeeInsideLastX128.toString())
+  // console.log('limitOrderType', limitOrderType.toString())
 
-  const {
-    collateralTokenBalance,
-    settlementTokenBalance,
-  } = await getRealTokenBalances(
-    rt.clearingHouse,
-    accNo,
-    addrs.collateralToken.address,
-    addrs2.settlementToken.address
-  )
-  console.log('collateralTokenBalance', collateralTokenBalance.toString())
-  console.log('settlementTokenBalance', settlementTokenBalance.toString())
+  // const {
+  //   collateralTokenBalance,
+  //   settlementTokenBalance,
+  // } = await getRealTokenBalances(
+  //   rt.clearingHouse,
+  //   accNo,
+  //   addrs.collateralToken.address,
+  //   addrs2.settlementToken.address
+  // )
+  // console.log('collateralTokenBalance', collateralTokenBalance.toString())
+  // console.log('settlementTokenBalance', settlementTokenBalance.toString())
 
-  const z = await getNetTokenPosition(
-    rt.clearingHouse,
-    accNo,
-    AMM_CONFIG.POOL_ID
-  )
-  console.log('netTokenPostion', z.toString())
+  // const z = await getNetTokenPosition(
+  //   rt.clearingHouse,
+  //   accNo,
+  //   AMM_CONFIG.POOL_ID
+  // )
+  // console.log('netTokenPostion', z.toString())
+
+  console.log(await rageTrade._updateCurrentFundingRate())
+  console.log(rageTrade.currentFundingRate)
 }
 
 main()
