@@ -13,3 +13,8 @@ export interface NetFtxPosition {
   netTraderPosition: Number
   accountMarketValue: Number
 }
+
+export interface InitOptions {
+  isPriceArb: boolean
+  rageAccountId: number
+}

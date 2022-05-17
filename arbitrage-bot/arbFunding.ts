@@ -14,8 +14,15 @@ import { estimateFundingArbProfit } from './helpers'
 // past '10' min MA on rage
 // test
 
-const ftx = new Ftx()
-const rageTrade = new RageTrade(false)
+const ftx = new Ftx({
+  isPriceArb: false,
+  rageAccountId: AMM_CONFIG.FUNDING_ARB_ACCOUNT_ID,
+})
+
+const rageTrade = new RageTrade({
+  isPriceArb: false,
+  rageAccountId: AMM_CONFIG.FUNDING_ARB_ACCOUNT_ID,
+})
 
 /** arbitrage entrypoint */
 const main = async () => {

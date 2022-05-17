@@ -21,8 +21,15 @@ import {
 // pre-flight checks
 // open github issues (possible optimizations)
 
-const ftx = new Ftx()
-const rageTrade = new RageTrade(true)
+const ftx = new Ftx({
+  isPriceArb: true,
+  rageAccountId: AMM_CONFIG.PRICE_ARB_ACCOUNT_ID,
+})
+
+const rageTrade = new RageTrade({
+  isPriceArb: true,
+  rageAccountId: AMM_CONFIG.PRICE_ARB_ACCOUNT_ID,
+})
 
 /** arbitrage entrypoint */
 const main = async () => {

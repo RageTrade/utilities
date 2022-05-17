@@ -1,6 +1,7 @@
 import { log } from '../../discord-logger'
 import { FTX_CONFIG, PRE_FLIGHT_CHECK, STRATERGY_CONFIG } from '../../config'
 import { AccountSummary, FuturesPosition, OrderSide, RestClient } from 'ftx-api'
+import { InitOptions } from '../../types'
 
 // track avg position size
 
@@ -12,17 +13,24 @@ export default class Ftx {
 
   public hasOpenPosition: boolean
 
-  public currentFundingRate = 0 // weighted based on past 8 hours
-  public netNotionalFundingPaid = 0
+  public currentFundingRate = 0
 
-  constructor() {
-    this.ftxClient = new RestClient(
-      FTX_CONFIG.ACCESS_KEY,
-      FTX_CONFIG.ACCESS_SECRET,
-      {
-        subAccountName: FTX_CONFIG.SUB_ACCOUNT_ID,
-      }
-    )
+  constructor(initOptions: InitOptions) {
+    initOptions.isPriceArb === true
+      ? (this.ftxClient = new RestClient(
+          FTX_CONFIG.PRICE_ARB_ACCOUNT.ACCESS_KEY,
+          FTX_CONFIG.PRICE_ARB_ACCOUNT.ACCESS_SECRET,
+          {
+            subAccountName: FTX_CONFIG.PRICE_ARB_ACCOUNT.SUB_ACCOUNT_ID,
+          }
+        ))
+      : (this.ftxClient = new RestClient(
+          FTX_CONFIG.FUNDING_ARB_ACCOUNT.ACCESS_KEY,
+          FTX_CONFIG.FUNDING_ARB_ACCOUNT.ACCESS_SECRET,
+          {
+            subAccountName: FTX_CONFIG.FUNDING_ARB_ACCOUNT.SUB_ACCOUNT_ID,
+          }
+        ))
 
     this.hasOpenPosition = false
 
@@ -73,8 +81,6 @@ export default class Ftx {
     // for (const each of fundingPayment.result) {
     //   netNotionalFunding += each.payment
     // }
-
-    this.netNotionalFundingPaid = netNotionalFunding
 
     position.cost == 0
       ? (this.currentFundingRate = 0)

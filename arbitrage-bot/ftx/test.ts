@@ -1,7 +1,10 @@
 import Ftx from '.'
-import { FTX_CONFIG } from '../../config'
+import { FTX_CONFIG, AMM_CONFIG } from '../../config'
 
-const ftx = new Ftx()
+const ftx = new Ftx({
+  isPriceArb: false,
+  rageAccountId: AMM_CONFIG.FUNDING_ARB_ACCOUNT_ID,
+})
 
 async function main() {
   await ftx.initialize()
@@ -20,7 +23,6 @@ async function main() {
 
   console.log(await ftx._updateCurrentFundingRate())
   console.log('currentFundingRate', ftx.currentFundingRate)
-  console.log('netNotionalFundingPaid', ftx.netNotionalFundingPaid)
 }
 
 main()
