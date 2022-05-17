@@ -59,4 +59,4 @@ RUN yarn install --frozen-lockfile
 COPY dist ./dist
 COPY config.ts ./config.ts
 
-CMD [ "pm2-runtime", "dist/arb-bot/execute.js" ]
+CMD [ "pm2-runtime", "dist/arbitrage-bot/execute.js" ]
