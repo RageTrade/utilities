@@ -14,7 +14,7 @@ const main = async () => {
     NETWORK_INF0.ALCHEMY_API_KEY
   )
 
-  const signer = new ethers.Wallet(NETWORK_INF0.PRIVATE_KEY, provider)
+  const signer = new ethers.Wallet(NETWORK_INF0.PK_LIQUIDATTION, provider)
 
   const clearingHouse = (await getContracts(signer)).clearingHouse
   const lastAccount = (await clearingHouse.numAccounts()).sub(1).toNumber()
@@ -94,7 +94,7 @@ const main = async () => {
   }
 }
 
-cron.schedule('*/2 * * * *', () => {
+cron.schedule('*/3 * * * *', () => {
   main()
     .then(() => console.log('RUN COMPLETE!'))
     .catch((error) => {
