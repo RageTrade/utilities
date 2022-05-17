@@ -2,7 +2,7 @@ import Ftx from '.'
 import { FTX_CONFIG, AMM_CONFIG } from '../../config'
 
 const ftx = new Ftx({
-  isPriceArb: false,
+  isPriceArb: true,
   rageAccountId: AMM_CONFIG.FUNDING_ARB_ACCOUNT_ID,
 })
 
@@ -17,12 +17,12 @@ async function main() {
   //   0.005 * 1000,
   //   'sell'
   // )
-  console.log(await ftx.queryFtxPosition())
-  console.log(await ftx.queryFtxAccount())
-  // console.log(await ftx.updatePosition(-0.914 * 1000))
+  // console.log(await ftx.queryFtxPosition())
+  // console.log(await ftx.queryFtxAccount())
+  // console.log(await ftx.updatePosition(0.006 * 1000))
 
-  console.log(await ftx._updateCurrentFundingRate())
-  console.log('currentFundingRate', ftx.currentFundingRate)
+  // console.log(await ftx._updateCurrentFundingRate())
+  // console.log('currentFundingRate', ftx.currentFundingRate)
 }
 
 main()

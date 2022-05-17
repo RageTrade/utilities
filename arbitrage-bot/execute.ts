@@ -88,8 +88,6 @@ const main = async () => {
 
   /** checks for arb and if found, executes the arb */
   const arbitrage = async () => {
-    cronMutex = true
-
     pFtx = await ftx.queryFtxPrice()
     pRage = await rageTrade.queryRagePrice()
 
@@ -149,7 +147,7 @@ const main = async () => {
 
       isSuccessful
         ? await log(
-            `arb successful,
+          `arb successful,
         ftxNetSize: ${positionPostTrade.result[0].netSize},
         rageNetSize: ${ragePosition},
         ftxPrice: ${positionPostTrade.result[0].entryPrice},
@@ -158,8 +156,8 @@ const main = async () => {
         pFinal - pRage: ${pFinal - ragePrice},
         pFtx - pRage: ${positionPostTrade.result[0].entryPrice! - ragePrice}`,
 
-            'ARB_BOT'
-          )
+          'ARB_BOT'
+        )
         : null
     } else {
       await log('profit does not cross minimum threshold to arb', 'ARB_BOT')
@@ -172,6 +170,7 @@ const main = async () => {
       log('SKIPPING ITERATION, BOT IS ALREADY ARBING', 'ARB_BOT')
       return
     }
+    cronMutex = true
     arbitrage()
       .then(() => {
         cronMutex = false
