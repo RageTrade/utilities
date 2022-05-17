@@ -117,24 +117,26 @@ const main = async () => {
     console.log('pRage', pRage)
     console.log('pFinal', pFinal)
     console.log('ftxMargin', ftxMargin)
-    console.log('potentialArbSize', potentialArbSize)
     console.log('updatedArbSize', updatedArbSize)
+    console.log('potentialArbSize', potentialArbSize)
 
     const potentialArbProfit = await calculateArbProfit(
       pFtx,
       Number(updatedArbSize.toFixed(6))
     )
 
+    console.log('potentialArbProfit', potentialArbProfit)
+
     if (potentialArbProfit > STRATERGY_CONFIG.MIN_NOTIONAL_PROFIT) {
       let isSuccessful = false
       const positionPostTrade = await ftx.updatePosition(updatedArbSize)
 
       try {
-        await rageTrade.updatePosition(updatedArbSize)
+        await rageTrade.updatePosition(updatedArbSize, pFinal)
         isSuccessful = true
       } catch (e) {
         isSuccessful = false
-        await log(`error: ${e}, reversing position on ftx`, 'ARB_BOT')
+        await log(`error: reversing position on ftx`, 'ARB_BOT')
         await ftx.updatePosition(-updatedArbSize)
       }
 
@@ -142,6 +144,8 @@ const main = async () => {
         rageTrade.queryRagePrice(),
         (await rageTrade.getRagePosition()).eth,
       ])
+
+      console.log('isSuccessful', isSuccessful)
 
       isSuccessful
         ? await log(
@@ -157,6 +161,8 @@ const main = async () => {
             'ARB_BOT'
           )
         : null
+    } else {
+      await log('profit does not cross minimum threshold to arb', 'ARB_BOT')
     }
   }
 

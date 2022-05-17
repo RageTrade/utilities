@@ -38,8 +38,8 @@ export default class RageTrade {
 
   constructor(initOptions: InitOptions) {
     this.provider = new providers.AlchemyWebSocketProvider(
-      NETWORK_INF0.ALCHEMY_API_KEY,
-      NETWORK_INF0.CHAIN_ID
+      NETWORK_INF0.CHAIN_ID,
+      NETWORK_INF0.ALCHEMY_API_KEY
     )
 
     initOptions.isPriceArb
@@ -98,25 +98,6 @@ export default class RageTrade {
     if (diffNowSeconds > PRE_FLIGHT_CHECK.BLOCK_TIMESTAMP_FRESHNESS_THRESHOLD)
       throw new Error('Stale block/state or provider is lagging')
   }
-
-  // past 8 hours funding paid/received
-  // private async _updateCurrentFundingRate() {
-  //   const [chainlinkTWAP, perpTWAP] = await Promise.all([
-  //     (this.contracts.clearingHouse as ClearingHouse).getRealTwapPriceX128(
-  //       AMM_CONFIG.POOL_ID
-  //     ),
-  //     (this.contracts.clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
-  //       AMM_CONFIG.POOL_ID
-  //     ),
-  //   ])
-
-  //   const num1 = Number(formatEther(chainlinkTWAP))
-  //   const num2 = Number(formatEther(perpTWAP))
-
-  //   this.currentFundingRate = (num2 - num1) / num1 / 24
-
-  //   console.log(this.currentFundingRate)
-  // }
 
   // +ve long pays short
   async _updateCurrentFundingRate() {
@@ -335,7 +316,7 @@ export default class RageTrade {
   }
 
   /** makes a Rage trade */
-  async updatePosition(size: number) {
+  async updatePosition(size: number, priceLimit: number) {
     const amount = parseEther(size.toString())
 
     const oldMarginFraction = await this._currentMarginFraction()
@@ -370,7 +351,7 @@ export default class RageTrade {
       AMM_CONFIG.POOL_ID,
       {
         amount: amount,
-        sqrtPriceLimit: 0,
+        sqrtPriceLimit: await priceToSqrtPriceX96(priceLimit, 6, 18),
         isNotional: false,
         settleProfit: false,
         isPartialAllowed: false,

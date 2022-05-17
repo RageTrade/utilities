@@ -53,38 +53,14 @@ export default class Ftx {
 
   // +ve => longs pays short
   async _updateCurrentFundingRate() {
-    const now = Math.floor(new Date().getTime() / 1000)
-
-    // const fundingPayment = await this.ftxClient.getFundingPayments({
-    //   start_time: now - 8 * 60 * 60,
-    //   end_time: now,
-    //   future: this.marketId,
-    // })
-
     const markets = (await this.ftxClient.getFundingRates()).result
-
-    let first
 
     for (const each of markets) {
       if (each.future == 'ETH-PERP') {
-        first = each.rate
+        this.currentFundingRate = each.rate
         break
       }
     }
-
-    console.log(first)
-
-    const position = await this.queryFtxPosition()
-
-    let netNotionalFunding = 0
-
-    // for (const each of fundingPayment.result) {
-    //   netNotionalFunding += each.payment
-    // }
-
-    position.cost == 0
-      ? (this.currentFundingRate = 0)
-      : (this.currentFundingRate = netNotionalFunding / position.cost)
   }
 
   async netProfit() {

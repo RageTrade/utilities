@@ -108,7 +108,7 @@ const main = async () => {
 
     if (estimatedArbProfit > STRATERGY_CONFIG.MIN_NOTIONAL_PROFIT) {
       const x = await ftx.updatePosition(updatedArbSize)
-      const y = await rageTrade.updatePosition(updatedArbSize)
+      const y = await rageTrade.updatePosition(updatedArbSize, pFtx)
 
       await log(
         `arb successful, ${x.result}, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${y.hash}`,
