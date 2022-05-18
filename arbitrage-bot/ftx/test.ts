@@ -19,7 +19,7 @@ async function main() {
   // )
   // console.log(await ftx.queryFtxPosition())
   // console.log(await ftx.queryFtxAccount())
-  // console.log(await ftx.updatePosition(0.006 * 1000))
+  // console.log(await ftx.updatePosition(0.01 * 1000))
 
   // console.log(await ftx._updateCurrentFundingRate())
   // console.log('currentFundingRate', ftx.currentFundingRate)
