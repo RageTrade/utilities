@@ -94,7 +94,10 @@ const main = async () => {
     const pFinal = calculateFinalPrice(pFtx, pRage, rageFee, ftxFee)
 
     if (isMovementWithinSpread(pFtx, pRage, pFinal) == true) {
-      await log('price movement is within spread', 'ARB_BOT')
+      await log(
+        `price movement is within spread, pFtx: ${pFtx}, pRage: ${pRage}, pFinal: ${pFinal}`,
+        'ARB_BOT'
+      )
       return
     }
 
@@ -160,7 +163,14 @@ const main = async () => {
           )
         : null
     } else {
-      await log('profit does not cross minimum threshold to arb', 'ARB_BOT')
+      await log(
+        `profit does not cross minimum threshold to arb, 
+                pFtx: ${pFtx}, pRage: ${pRage}, pFinal: ${pFinal},
+                potentialArbProfit: ${potentialArbProfit},
+                potentialArbSize: ${updatedArbSize}
+                `,
+        'ARB_BOT'
+      )
     }
   }
 
