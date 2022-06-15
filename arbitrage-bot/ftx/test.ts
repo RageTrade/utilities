@@ -19,7 +19,7 @@ async function main() {
   // )
   // console.log(await ftx.queryFtxPosition())
   // console.log(await ftx.queryFtxAccount())
-  // console.log(await ftx.updatePosition(0.01 * 1000))
+  // console.log(await ftx.updatePosition(0.472 * 1000))
 
   // console.log(await ftx._updateCurrentFundingRate())
   // console.log('currentFundingRate', ftx.currentFundingRate)
@@ -31,3 +31,20 @@ main()
     console.error(error)
     process.exit(1)
   })
+
+// entryPrice after each trade, realizedPnl after each trade, realizedPnl when bot is started
+// pnl, funding payment => script
+
+// every trade (size, side, execution price, transaction cost)
+// funding paid/received
+
+// t0, p1
+// current time, p2
+
+// XXX
+// for each trade p1 -> p2 {
+//  query values
+//  expected pnl:  (amount bought - amount sold) * current price
+
+// actual - expected > some %, notify
+// }

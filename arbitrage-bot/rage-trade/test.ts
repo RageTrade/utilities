@@ -3,13 +3,14 @@ import { AMM_CONFIG } from '../../config'
 
 async function main() {
   const rageTrade = new RageTrade({
-    isPriceArb: false,
+    isPriceArb: true,
     rageAccountId: AMM_CONFIG.FUNDING_ARB_ACCOUNT_ID,
   })
   await rageTrade.initialize()
 
-  console.log(await rageTrade._updateCurrentFundingRate())
-  console.log(rageTrade.currentFundingRate)
+  console.log(
+    await rageTrade.getLiquidityInRange(1951.5187099417672, 1961.8462222621959)
+  )
 }
 
 main()

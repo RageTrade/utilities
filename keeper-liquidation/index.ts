@@ -50,7 +50,9 @@ const main = async () => {
     if (await canLiquidate(accountId)) {
       const tx = await clearingHouse
         .connect(signer)
-        .liquidateTokenPosition(accountId, AMM_CONFIG.POOL_ID)
+        .liquidateTokenPosition(accountId, AMM_CONFIG.POOL_ID, {
+          gasLimit: 50_000_000,
+        })
       await tx.wait()
 
       return tx.hash
@@ -70,7 +72,10 @@ const main = async () => {
 
   for (let id = 0; id <= lastAccount; id++) {
     if (await canLiquidate(id)) {
-      await log(`account # ${id} is underwater, liquidating...`, 'LIQUIDATION')
+      await log(
+        `account # ${id} is underwater, liquidating... ${Date.now()}`,
+        'LIQUIDATION'
+      )
       const hasTradPos = await hasTraderPosition(id)
       const hasLiqPos = await hasLiquiditiyPosition(id)
 
@@ -94,7 +99,7 @@ const main = async () => {
   }
 }
 
-cron.schedule('*/3 * * * *', () => {
+cron.schedule('*/30 * * * * *', () => {
   main()
     .then(() => console.log('RUN COMPLETE!'))
     .catch((error) => {

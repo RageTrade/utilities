@@ -20,6 +20,7 @@ import {
 // fix partial
 // pre-flight checks
 // open github issues (possible optimizations)
+// gas price
 
 const ftx = new Ftx({
   isPriceArb: true,
@@ -45,11 +46,7 @@ const main = async () => {
   let pRage = await rageTrade.queryRagePrice()
 
   /** calculates the size of the potential arbitrage in ETH */
-  const calculateSizeOfArbitrage = async (
-    pRage: number,
-    pFtx: number,
-    pFinal: number
-  ) => {
+  const calculateSizeOfArbitrage = async (pRage: number, pFinal: number) => {
     const { vTokenIn } = await rageTrade.getLiquidityInRange(pRage, pFinal)
 
     let maxEthPosition = -Number(formatEther(vTokenIn)) // max directional eth position to close price difference
@@ -103,7 +100,6 @@ const main = async () => {
 
     const { maxEthPosition: potentialArbSize } = await calculateSizeOfArbitrage(
       pRage,
-      pFtx,
       pFinal
     )
 
