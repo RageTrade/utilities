@@ -174,21 +174,24 @@ const main = async () => {
     }
   }
 
-  cron.schedule(`*/${STRATERGY_CONFIG.FREQUENCY} * * * * *`, () => {
+  cron.schedule(`*/${STRATERGY_CONFIG.FREQUENCY} * * * * *`, async () => {
+    const startTime = Date.now()
     console.log('cronMutex', cronMutex)
     if (cronMutex) {
-      log('SKIPPING ITERATION, BOT IS ALREADY ARBING', 'ARB_BOT')
+      await log('SKIPPING ITERATION, BOT IS ALREADY ARBING', 'ARB_BOT')
       return
     }
     cronMutex = true
     arbitrage()
       .then(() => {
-        cronMutex = false
         console.log('ARB COMPLETE!')
       })
       .catch((error) => {
-        cronMutex = false
         console.log(error.message)
+      })
+      .finally(() => {
+        cronMutex = false
+        log(`took ${Date.now() - startTime} to run arbitrage loop`, 'ARB_BOT')
       })
   })
 }

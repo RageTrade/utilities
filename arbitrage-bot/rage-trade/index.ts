@@ -12,6 +12,7 @@ import {
   VPoolWrapper,
   SwapSimulator,
 } from '@ragetrade/sdk'
+import { ClearingHouseLens } from '@ragetrade/sdk/dist/typechain/core'
 import { IUniswapV3Pool } from '@ragetrade/sdk/dist/typechain/vaults'
 import { BigNumber, providers, Wallet } from 'ethers'
 import { formatEther, parseEther } from 'ethers/lib/utils'
@@ -79,9 +80,8 @@ export default class RageTrade {
       throw new Error('Arbitrum account out of gas')
     }
 
-    const accInfo = await this.contracts.clearingHouse.getAccountInfo(
-      this.accountId
-    )
+    const accInfo = await (this.contracts
+      .clearingHouseLens as ClearingHouseLens).getAccountInfo(this.accountId)
 
     if (accInfo.owner != this.wallet.address) {
       await log('Account owner does not equal wallet address', 'ARB_BOT')
@@ -217,8 +217,11 @@ export default class RageTrade {
   }
 
   private async _currentMarginFraction() {
-    const account = await (this.contracts
-      .clearingHouse as ClearingHouse).getAccountInfo(this.accountId)
+    const { netTraderPosition } = await (this.contracts
+      .clearingHouseLens as ClearingHouseLens).getAccountTokenPositionInfo(
+      this.accountId,
+      AMM_CONFIG.POOL_ID
+    )
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
       AMM_CONFIG.POOL_ID
@@ -232,12 +235,7 @@ export default class RageTrade {
     )
 
     const openPositionNotional =
-      Number(
-        formatEther(
-          account.tokenPositions[0]?.netTraderPosition.abs() ||
-            BigNumber.from(0)
-        )
-      ) * price
+      Number(formatEther(netTraderPosition.abs())) * price
 
     const marketValueNotional = Number(formatUsdc(marketValue.abs()))
 
@@ -263,11 +261,14 @@ export default class RageTrade {
 
     const marketValueNotional = Number(formatUsdc(marketValue))
 
-    const { tokenPositions } = await (this.contracts
-      .clearingHouse as ClearingHouse).getAccountInfo(this.accountId)
+    const { netTraderPosition } = await (this.contracts
+      .clearingHouseLens as ClearingHouseLens).getAccountTokenPositionInfo(
+      this.accountId,
+      AMM_CONFIG.POOL_ID
+    )
 
-    const currentPosition =
-      tokenPositions[0]?.netTraderPosition || BigNumber.from(0) // selects ETH position from positions
+    const currentPosition = netTraderPosition || BigNumber.from(0) // selects ETH position from positions
+
     const currentPositionNotional =
       Number(formatEther(currentPosition.abs())) * price
     const isLong = currentPosition.gte(0) ? 1 : -1
@@ -299,12 +300,14 @@ export default class RageTrade {
       false
     )
 
-    const { tokenPositions } = await (this.contracts
-      .clearingHouse as ClearingHouse).getAccountInfo(this.accountId)
+    const { netTraderPosition } = await (this.contracts
+      .clearingHouseLens as ClearingHouseLens).getAccountTokenPositionInfo(
+      this.accountId,
+      AMM_CONFIG.POOL_ID
+    )
 
     const marketValueEth = Number(formatUsdc(marketValue)) / price
-    const currentPosition =
-      tokenPositions[0]?.netTraderPosition || BigNumber.from(0)
+    const currentPosition = netTraderPosition || BigNumber.from(0)
     const currentPositionEth = Number(formatEther(currentPosition))
 
     const newMarginFraction: number =
@@ -364,15 +367,18 @@ export default class RageTrade {
 
   /** gets Rage position in both ETH and USD terms */
   async getRagePosition() {
-    const { tokenPositions } = await (this.contracts
-      .clearingHouse as ClearingHouse).getAccountInfo(this.accountId)
+    const { netTraderPosition } = await (this.contracts
+      .clearingHouseLens as ClearingHouseLens).getAccountPositionInfo(
+      this.accountId,
+      AMM_CONFIG.POOL_ID
+    )
     const priceX128 = await (this.contracts
       .clearingHouse as ClearingHouse).getVirtualTwapPriceX128(
       AMM_CONFIG.POOL_ID
     )
     const price = await priceX128ToPrice(priceX128, 6, 18)
 
-    const position = tokenPositions[0]?.netTraderPosition || BigNumber.from(0)
+    const position = netTraderPosition || BigNumber.from(0)
 
     return {
       eth: formatEther(position),

@@ -1,72 +1,73 @@
+import cron from 'node-cron'
+
 import { ethers } from 'ethers'
 import { getContracts } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
 import { NETWORK_INF0, AMM_CONFIG } from '../config'
 
-import cron from 'node-cron'
+import {
+  ClearingHouse,
+  ClearingHouseLens,
+} from '@ragetrade/sdk/dist/typechain/core'
 
-const main = async () => {
-  console.log('RUN STARTED!')
+let clearingHouse: ClearingHouse
+let clearingHouseLens: ClearingHouseLens
 
-  const provider = new ethers.providers.AlchemyWebSocketProvider(
-    NETWORK_INF0.CHAIN_ID,
-    NETWORK_INF0.ALCHEMY_API_KEY
+const canLiquidate = async (accountId: number) => {
+  const {
+    marketValue,
+    requiredMargin,
+  } = await clearingHouse.getAccountMarketValueAndRequiredMargin(
+    accountId,
+    false
   )
 
-  const signer = new ethers.Wallet(NETWORK_INF0.PK_LIQUIDATTION, provider)
+  console.log(requiredMargin.gt(marketValue), accountId)
+  return requiredMargin.gt(marketValue)
+}
 
-  const clearingHouse = (await getContracts(signer)).clearingHouse
-  const lastAccount = (await clearingHouse.numAccounts()).sub(1).toNumber()
+const hasTraderPosition = async (accountId: number) => {
+  const {
+    netTraderPosition,
+  } = await clearingHouseLens.getAccountTokenPositionInfo(
+    accountId,
+    AMM_CONFIG.POOL_ID
+  )
+  return netTraderPosition && netTraderPosition.gt(0)
+}
 
-  const canLiquidate = async (accountId: number) => {
-    const {
-      marketValue,
-      requiredMargin,
-    } = await clearingHouse.getAccountMarketValueAndRequiredMargin(
+const hasLiquiditiyPosition = async (accountId: number) => {
+  const liqPositions = await clearingHouseLens.getAccountLiquidityPositionList(
+    accountId,
+    AMM_CONFIG.POOL_ID
+  )
+  return liqPositions && liqPositions.length > 0
+}
+
+const liquidateTraderPosition = async (accountId: number) => {
+  if (await canLiquidate(accountId)) {
+    const tx = await clearingHouse.liquidateTokenPosition(
       accountId,
-      false
+      AMM_CONFIG.POOL_ID
     )
+    await tx.wait()
 
-    console.log(requiredMargin.gt(marketValue), accountId)
-    return requiredMargin.gt(marketValue) ? true : false
+    return tx.hash
   }
+}
 
-  const hasTraderPosition = async (accountId: number) => {
-    const { tokenPositions } = await clearingHouse.getAccountInfo(accountId)
-    if (tokenPositions.length > 0)
-      return !tokenPositions[0].netTraderPosition.isZero()
-    return false
+const liquidateLiquidityPosition = async (accountId: number) => {
+  if (await canLiquidate(accountId)) {
+    const tx = await clearingHouse.liquidateLiquidityPositions(accountId)
+    await tx.wait()
+
+    return tx.hash
   }
+}
 
-  const hasLiquiditiyPosition = async (accountId: number) => {
-    const { tokenPositions } = await clearingHouse.getAccountInfo(accountId)
-    if (tokenPositions.length > 0)
-      return tokenPositions[0].liquidityPositions.length > 0 ? true : false
-    return false
-  }
-
-  const liquidateTraderPosition = async (accountId: number) => {
-    if (await canLiquidate(accountId)) {
-      const tx = await clearingHouse
-        .connect(signer)
-        .liquidateTokenPosition(accountId, AMM_CONFIG.POOL_ID)
-      await tx.wait()
-
-      return tx.hash
-    }
-  }
-
-  const liquidateLiquidityPosition = async (accountId: number) => {
-    if (await canLiquidate(accountId)) {
-      const tx = await clearingHouse
-        .connect(signer)
-        .liquidateLiquidityPositions(accountId)
-      await tx.wait()
-
-      return tx.hash
-    }
-  }
+const liquidate = async () => {
+  const lastAccount = (await clearingHouse.numAccounts()).sub(1).toNumber()
 
   for (let id = 0; id <= lastAccount; id++) {
     if (await canLiquidate(id)) {
@@ -78,7 +79,7 @@ const main = async () => {
         const tx = await liquidateLiquidityPosition(id)
         await log(
           `liquidity position of account # ${id} liquidated!
-          ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+            ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
           'LIQUIDATION'
         )
       }
@@ -86,7 +87,7 @@ const main = async () => {
         const tx = await liquidateTraderPosition(id)
         await log(
           `trader position of account # ${id} liquidated!,
-          ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+            ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
           'LIQUIDATION'
         )
       }
@@ -94,11 +95,22 @@ const main = async () => {
   }
 }
 
-cron.schedule('*/3 * * * *', () => {
-  main()
-    .then(() => console.log('RUN COMPLETE!'))
-    .catch((error) => {
-      console.error(error)
-      process.exit(1)
-    })
+(async () => {
+  const provider = new ethers.providers.AlchemyWebSocketProvider(
+    NETWORK_INF0.CHAIN_ID,
+    NETWORK_INF0.ALCHEMY_API_KEY
+  )
+
+  const signer = new ethers.Wallet(NETWORK_INF0.PK_LIQUIDATTION, provider)
+
+  ;({ clearingHouse, clearingHouseLens } = await getContracts(signer))
+
+  cron.schedule('*/3 * * * *', () => {
+    liquidate()
+      .then(() => console.log('RUN COMPLETE!'))
+      .catch((error) => {
+        console.error(error)
+        process.exit(1)
+      })
+  })
 })

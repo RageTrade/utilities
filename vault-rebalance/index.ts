@@ -79,7 +79,7 @@ cron.schedule('*/30 * * * * *', () => {
     })
 })
 
-cron.schedule('*/1 * * * *', () => {
+cron.schedule('*/1 * * * *', async () => {
   if (!isReset) return
 
   closeTokenPosition()
