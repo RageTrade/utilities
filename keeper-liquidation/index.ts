@@ -95,7 +95,7 @@ const liquidate = async () => {
   }
 }
 
-(async () => {
+;(async () => {
   const provider = new ethers.providers.StaticJsonRpcProvider(
     NETWORK_INF0.HTTP_RPC_URL,
     NETWORK_INF0.CHAIN_ID
@@ -113,4 +113,4 @@ const liquidate = async () => {
         process.exit(1)
       })
   })
-})
+})().catch((e) => console.log(e))

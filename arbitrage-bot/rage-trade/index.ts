@@ -337,14 +337,14 @@ export default class RageTrade {
 
     if (newMarginFraction < STRATERGY_CONFIG.HARD_MARGIN_RATIO_THRESHOLD) {
       await log(
-        `cannot take further position due to breach of max allowed margin fraction,
+        `RT: cannot take further position due to breach of max allowed margin fraction,
         margin fraction before: ${oldMarginFraction},
         margin fraction after current trade: ${newMarginFraction}     
         `,
         'ARB_BOT'
       )
       throw new Error(
-        'cannot take further position due to breach of max allowed margin fraction'
+        'RT: cannot take further position due to breach of max allowed margin fraction'
       )
     }
 
