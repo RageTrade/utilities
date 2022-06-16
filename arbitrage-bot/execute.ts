@@ -69,7 +69,7 @@ const main = async () => {
       Math.floor(Date.now() / 1000)
     )
 
-    const data = JSON.stringify({
+    const data = {
       ftxFundingRate: ftxFundingRate,
       rageFundingRate: rageFundingRate,
       ftxAccountMarketValue: ftxAccountMarketValue,
@@ -86,10 +86,14 @@ const main = async () => {
       totalTradesAttemptedOnRage: totalTrades,
       totalTradesRevertedOnRage: totalRevesedTrades,
       totalTradesOnFtx: totalTradesOnFtx,
-    })
+    }
 
-    log(data, 'ARB_BOT')
-    console.log(data)
+    if (data.changeInSumOfMarketValue * (-1) > (0.01 * data.currentMarketValueSum)) {
+      log('<@&987030632704118835> market value decreased by more than 1%', 'ARB_BOT')
+    }
+
+    log(JSON.stringify(data), 'ARB_BOT')
+    console.log(JSON.stringify(data))
 
     lastEthBal = currentEthBal
     lastRecordedAccountMarketValueSum =
