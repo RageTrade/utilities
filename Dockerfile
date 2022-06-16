@@ -17,7 +17,7 @@ RUN yarn install --frozen-lockfile
 COPY dist ./dist
 COPY config.ts ./config.ts
 
-CMD [ "pm2-runtime", "dist/keeper-liquidation/index.js" ]
+CMD [ "pm2-runtime", "ecosystem.config.js", "--only", "keeper-liquidation" ]
 
 # vault-rebalance
 FROM node:17.9.0-alpine3.15 as vault-rebalance
@@ -38,7 +38,7 @@ RUN yarn install --frozen-lockfile
 COPY dist ./dist
 COPY config.ts ./config.ts
 
-CMD [ "pm2-runtime", "dist/vault-rebalance/index.js" ]
+CMD [ "pm2-runtime", "ecosystem.config.js", "--only", "vault-rebalance" ]
 
 # arb-bot
 FROM node:17.9.0-alpine3.15 as arb-bot
@@ -59,4 +59,4 @@ RUN yarn install --frozen-lockfile
 COPY dist ./dist
 COPY config.ts ./config.ts
 
-CMD [ "pm2-runtime", "dist/arbitrage-bot/execute.js" ]
+CMD [ "pm2-runtime", "ecosystem.config.js", "--only", "arb-bot" ]
