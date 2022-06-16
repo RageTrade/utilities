@@ -26,7 +26,7 @@ const rageTrade = new RageTrade({
 })
 
 let currentRuns = 0
-let runsToLogAfter = 3
+let runsToLogAfter = 30
 
 let totalTrades = 0
 let totalRevesedTrades = 0
@@ -65,7 +65,7 @@ const main = async () => {
     const previousSum = lastRecordedAccountMarketValueSum
 
     const totalTradesOnFtx = await ftx.getTotalTrades(
-      Math.floor(Date.now() / 1000) - 1.5 * 60,
+      Math.floor(Date.now() / 1000) - 15 * 60,
       Math.floor(Date.now() / 1000)
     )
 
