@@ -202,20 +202,20 @@ const main = async () => {
         (await rageTrade.getRagePosition()).eth,
       ])
 
-      isSuccessful
-        ? await log(
-          `arb successful,
-        ftxNetSize: ${positionPostTrade.result[0].netSize},
-        rageNetSize: ${ragePosition},
-        ftxPrice: ${positionPostTrade.result[0].entryPrice},
-        ragePrice: ${ragePrice},
-        pFinal (expected): ${pFinal},
-        pFinal - pRage: ${pFinal - ragePrice},
-        pFtx - pRage: ${positionPostTrade.result[0].entryPrice! - ragePrice}`,
 
-          'ARB_BOT'
-        )
-        : null
+      if (isSuccessful) {
+        const data = JSON.stringify(
+          {
+            ftxNetSize: positionPostTrade.result[0].netSize,
+            rageNetSize: ragePosition,
+            ftxPrice: positionPostTrade.result[0].entryPrice,
+            ragePrice: ragePrice,
+            pFinal: pFinal
+          })
+
+        console.log(data)
+        log(data, 'ARB_BOT')
+      }
     } else {
       await log(
         `profit does not cross minimum threshold to arb, 
