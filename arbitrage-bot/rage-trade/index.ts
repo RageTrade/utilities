@@ -11,6 +11,10 @@ import {
   sqrtPriceX96ToPrice,
   VPoolWrapper,
   SwapSimulator,
+  priceToPriceX128,
+  toQ128,
+  tickToPrice,
+  formatFundingRate,
 } from '@ragetrade/sdk'
 import { ClearingHouseLens } from '@ragetrade/sdk/dist/typechain/core'
 import { IUniswapV3Pool } from '@ragetrade/sdk/dist/typechain/vaults'
@@ -124,7 +128,7 @@ export default class RageTrade {
     } = await (eth_vPoolWrapper as VPoolWrapper).getFundingRateAndVirtualPrice()
     const fundingRatePerSecond = fromQ128(fundingRateX128)
 
-    console.log(-fundingRatePerSecond * 60 * 60)
+    // console.log(-fundingRatePerSecond * 60 * 60)
   }
 
   // add deviation check
@@ -383,6 +387,71 @@ export default class RageTrade {
     return {
       eth: formatEther(position),
       notional: Number(formatEther(position)) * price,
+    }
+  }
+
+  async getCurrentFundingRate() {
+    const eth_vPool: IUniswapV3Pool = this.contracts.eth_vPool
+    const eth_vPoolWrapper: VPoolWrapper = this.contracts.eth_vPoolWrapper
+
+    const fpStateCurrent = await eth_vPoolWrapper.fpGlobal()
+    const fpStateOld = await eth_vPoolWrapper.fpGlobal({
+      blockTag: (
+        await findBlockByTimestamp(
+          this.wallet.provider,
+          Math.floor(Date.now() / 1000) - 3600
+        )
+      ).number,
+    })
+
+    const result = await eth_vPool.observe([3600, 0])
+
+    const tickCumulativesDelta = result.tickCumulatives[1].sub(
+      result.tickCumulatives[0]
+    )
+    let timeWeightedAverageTick = tickCumulativesDelta.div(3600)
+
+    if (
+      tickCumulativesDelta.lt(0) &&
+      !tickCumulativesDelta.mod(3600).isZero()
+    ) {
+      timeWeightedAverageTick = timeWeightedAverageTick.sub(1)
+    }
+
+    const priceX128 = await priceToPriceX128(
+      await tickToPrice(timeWeightedAverageTick.toNumber(), 6, 18),
+      6,
+      18
+    )
+
+    return formatFundingRate(
+      fpStateCurrent.sumAX128
+        .sub(fpStateOld.sumAX128)
+        .mul(toQ128(1))
+        .div(priceX128)
+        .div(3600)
+    )
+  }
+
+  async getRageMarketValue() {
+    const { marketValue } = await (this.contracts
+      .clearingHouse as ClearingHouse).getAccountMarketValueAndRequiredMargin(
+      this.accountId,
+      false
+    )
+
+    return Number(formatUsdc(marketValue))
+  }
+
+  async getEthBalanceAndNonce() {
+    const [ethBal, nonce] = await Promise.all([
+      this.wallet.getBalance(),
+      this.wallet.getTransactionCount(),
+    ])
+
+    return {
+      ethBal: Number(formatEther(ethBal)),
+      nonce: nonce,
     }
   }
 }

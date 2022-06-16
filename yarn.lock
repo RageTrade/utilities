@@ -614,7 +614,7 @@ fsevents@~2.3.2:
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
   integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
 
-ftx-api@^1.1.8:
+ftx-api@^1.1.11:
   version "1.1.11"
   resolved "https://registry.yarnpkg.com/ftx-api/-/ftx-api-1.1.11.tgz#a60450c0e8a0cb8d58ccc02ce17cf0b1fca57625"
   integrity sha512-SO1DEqlXK6U3rk/LKWhw1lWEGNJSCCn00eEhppslDa8xTwrb1A8jMpIaZT3Wb4H1vz+cUN6BR2ECp51TjXv1tA==

@@ -16,8 +16,8 @@
     "@tsconfig/node17": "^1.0.0",
     "@types/node": "^17.0.34",
     "@types/node-cron": "^3.0.1",
-    "typescript": "4.6.4",
     "@types/uuid": "^8.3.4",
+    "typescript": "4.6.4",
     "uuid": "^8.3.2"
   },
   "dependencies": {
@@ -25,7 +25,7 @@
     "@uniswap/v3-sdk": "^3.8.2",
     "cross-fetch": "^3.1.5",
     "ethers": "^5.6.6",
-    "ftx-api": "^1.1.8",
+    "ftx-api": "^1.1.11",
     "node-cron": "^3.0.0"
   }
 }

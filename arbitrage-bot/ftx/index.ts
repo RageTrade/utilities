@@ -221,4 +221,24 @@ export default class Ftx {
     if (updatedPosition.result[0].netSize === 0) this.hasOpenPosition = false
     return updatedPosition
   }
+
+  async getTotalTrades(from: number, to: number) {
+    return (
+      await this.ftxClient.getOrderHistory({
+        end_time: to,
+        start_time: from,
+        market: this.marketId,
+      })
+    ).result.length
+  }
+
+  async getCurrentFundingRate() {
+    return (
+      (
+        await this.ftxClient.getFundingRates({
+          future: this.marketId,
+        })
+      ).result[0].rate * 100
+    )
+  }
 }

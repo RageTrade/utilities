@@ -19,6 +19,15 @@ async function main() {
   // )
   console.log(await ftx.queryFtxPosition())
   console.log(await ftx.queryFtxAccount())
+
+  // console.log(
+  //   await ftx.getTotalTrades(
+  //     Math.floor(Date.now() / 1000) - 15 * 60,
+  //     Math.floor(Date.now() / 1000)
+  //   )
+  // )
+
+  // console.log(await ftx.getCurrentFundingRate())
   // console.log(await ftx.updatePosition(0.01 * 1000))
 
   // console.log(await ftx._updateCurrentFundingRate())

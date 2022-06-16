@@ -5,7 +5,7 @@ module.exports = [
     out_file: '.pm2/logs/output.log',
     error_file: '.pm2/logs/error.log',
     combine_logs: true,
-    merge_logs: true
+    merge_logs: true,
   },
   {
     script: 'dist/keeper-liquidation/index.js',
@@ -13,7 +13,7 @@ module.exports = [
     out_file: '.pm2/logs/output.log',
     error_file: '.pm2/logs/error.log',
     combine_logs: true,
-    merge_logs: true
+    merge_logs: true,
   },
   {
     script: 'dist/vault-rebalance/index.js',
@@ -21,6 +21,6 @@ module.exports = [
     out_file: '.pm2/logs/output.log',
     error_file: '.pm2/logs/error.log',
     combine_logs: true,
-    merge_logs: true
-  }
+    merge_logs: true,
+  },
 ]

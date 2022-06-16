@@ -1,16 +1,10 @@
 import Ftx from './ftx'
 import cron from 'node-cron'
-import { OrderSide } from 'ftx-api'
 import RageTrade from './rage-trade'
 import { log } from '../discord-logger'
-import {
-  AMM_CONFIG,
-  FTX_CONFIG,
-  NETWORK_INF0,
-  STRATERGY_CONFIG,
-} from '../config'
+import { AMM_CONFIG, FTX_CONFIG, STRATERGY_CONFIG } from '../config'
 import { formatUsdc } from '@ragetrade/sdk'
-import { formatEther, parseEther } from 'ethers/lib/utils'
+import { formatEther } from 'ethers/lib/utils'
 import {
   isMovementWithinSpread,
   calculateFinalPrice,
@@ -31,6 +25,19 @@ const rageTrade = new RageTrade({
   rageAccountId: AMM_CONFIG.PRICE_ARB_ACCOUNT_ID,
 })
 
+let currentRuns = 0
+let runsToLogAfter = 3
+
+let totalTrades = 0
+let totalRevesedTrades = 0
+
+let lastEthBal = 0
+let currentEthBal = 0
+
+let ftxAccountMarketValue = 0
+let rageAccountMarketValue = 0
+let lastRecordedAccountMarketValueSum = 0
+
 /** arbitrage entrypoint */
 const main = async () => {
   let cronMutex = false
@@ -44,12 +51,57 @@ const main = async () => {
   let pFtx = await ftx.queryFtxPrice()
   let pRage = await rageTrade.queryRagePrice()
 
+  const logState = async () => {
+    currentEthBal = (await rageTrade.getEthBalanceAndNonce()).ethBal
+
+    const [ftxFundingRate, rageFundingRate] = await Promise.all([
+      ftx.getCurrentFundingRate(),
+      rageTrade.getCurrentFundingRate(),
+    ])
+
+    ftxAccountMarketValue = await ftx.queryFtxMargin()
+    rageAccountMarketValue = await rageTrade.getRageMarketValue()
+
+    const previousSum = lastRecordedAccountMarketValueSum
+
+    const totalTradesOnFtx = await ftx.getTotalTrades(
+      Math.floor(Date.now() / 1000) - 15 * 60,
+      Math.floor(Date.now() / 1000)
+    )
+
+    const data = JSON.stringify({
+      ftxFundingRate: ftxFundingRate,
+      rageFundingRate: rageFundingRate,
+      ftxAccountMarketValue: ftxAccountMarketValue,
+      rageAccountMarketValue: rageAccountMarketValue,
+      previousMarketValueSum: previousSum,
+      currentMarketValueSum: ftxAccountMarketValue + rageAccountMarketValue,
+      changeInSumOfMarketValue:
+        ftxAccountMarketValue +
+        rageAccountMarketValue -
+        lastRecordedAccountMarketValueSum,
+      currentEthBalance: currentEthBal,
+      previousEthBalance: lastEthBal,
+      changeInEthBalance: currentEthBal - lastEthBal,
+      totalTradesAttemptedOnRage: totalTrades,
+      totalTradesRevertedOnRage: totalRevesedTrades,
+      totalTradesOnFtx: totalTradesOnFtx,
+    })
+
+    log(data, 'ARB_BOT')
+    console.log(data)
+
+    lastEthBal = currentEthBal
+    lastRecordedAccountMarketValueSum =
+      ftxAccountMarketValue + rageAccountMarketValue
+
+    currentRuns = 0
+    totalTrades = 0
+    totalRevesedTrades = 0
+  }
+
   /** calculates the size of the potential arbitrage in ETH */
-  const calculateSizeOfArbitrage = async (
-    pRage: number,
-    pFtx: number,
-    pFinal: number
-  ) => {
+  const calculateSizeOfArbitrage = async (pRage: number, pFinal: number) => {
     const { vTokenIn } = await rageTrade.getLiquidityInRange(pRage, pFinal)
 
     let maxEthPosition = -Number(formatEther(vTokenIn)) // max directional eth position to close price difference
@@ -103,7 +155,6 @@ const main = async () => {
 
     const { maxEthPosition: potentialArbSize } = await calculateSizeOfArbitrage(
       pRage,
-      pFtx,
       pFinal
     )
 
@@ -126,8 +177,6 @@ const main = async () => {
       Number(updatedArbSize.toFixed(6))
     )
 
-    console.log('potentialArbProfit', potentialArbProfit)
-
     if (potentialArbProfit > STRATERGY_CONFIG.MIN_NOTIONAL_PROFIT) {
       let isSuccessful = false
       const positionPostTrade = await ftx.updatePosition(updatedArbSize)
@@ -135,18 +184,19 @@ const main = async () => {
       try {
         await rageTrade.updatePosition(updatedArbSize, pFinal)
         isSuccessful = true
+        totalTrades++
       } catch (e) {
         isSuccessful = false
         await log(`error: reversing position on ftx`, 'ARB_BOT')
         await ftx.updatePosition(-updatedArbSize)
+        totalTrades++
+        totalRevesedTrades++
       }
 
       const [ragePrice, ragePosition] = await Promise.all([
         rageTrade.queryRagePrice(),
         (await rageTrade.getRagePosition()).eth,
       ])
-
-      console.log('isSuccessful', isSuccessful)
 
       isSuccessful
         ? await log(
@@ -175,19 +225,24 @@ const main = async () => {
   }
 
   cron.schedule(`*/${STRATERGY_CONFIG.FREQUENCY} * * * * *`, async () => {
+    currentRuns++
+
+    if (currentRuns === runsToLogAfter) await logState()
+
     const startTime = Date.now()
-    console.log('cronMutex', cronMutex)
+
     if (cronMutex) {
       await log('SKIPPING ITERATION, BOT IS ALREADY ARBING', 'ARB_BOT')
       return
     }
     cronMutex = true
+
     arbitrage()
       .then(() => {
         console.log('ARB COMPLETE!')
       })
-      .catch((error) => {
-        console.log(error.message)
+      .catch((error: Error) => {
+        console.log(error.name, error.message)
       })
       .finally(() => {
         cronMutex = false
@@ -203,6 +258,4 @@ main()
       'ARB_BOT'
     )
   )
-  .catch((error) => {
-    console.log(error.message)
-  })
+  .catch((error) => console.log(error.message))
