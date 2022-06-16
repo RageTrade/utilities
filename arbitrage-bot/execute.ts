@@ -65,7 +65,7 @@ const main = async () => {
     const previousSum = lastRecordedAccountMarketValueSum
 
     const totalTradesOnFtx = await ftx.getTotalTrades(
-      Math.floor(Date.now() / 1000) - 15 * 60,
+      Math.floor(Date.now() / 1000) - 1.5 * 60,
       Math.floor(Date.now() / 1000)
     )
 
@@ -200,7 +200,7 @@ const main = async () => {
 
       isSuccessful
         ? await log(
-            `arb successful,
+          `arb successful,
         ftxNetSize: ${positionPostTrade.result[0].netSize},
         rageNetSize: ${ragePosition},
         ftxPrice: ${positionPostTrade.result[0].entryPrice},
@@ -209,8 +209,8 @@ const main = async () => {
         pFinal - pRage: ${pFinal - ragePrice},
         pFtx - pRage: ${positionPostTrade.result[0].entryPrice! - ragePrice}`,
 
-            'ARB_BOT'
-          )
+          'ARB_BOT'
+        )
         : null
     } else {
       await log(
