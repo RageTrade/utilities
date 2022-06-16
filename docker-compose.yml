@@ -5,6 +5,7 @@ services:
       driver: awslogs
       options:
         awslogs-region: us-east-1
+        awslogs-group: arb-bot-logs
     build:
       context: .
       target: arb-bot
@@ -13,6 +14,7 @@ services:
       driver: awslogs
       options:
         awslogs-region: us-east-1
+        awslogs-group: keeper-liquidation-logs
     build:
       context: .
       target: vault-rebalance
@@ -21,6 +23,7 @@ services:
       driver: awslogs
       options:
         awslogs-region: us-east-1
+        awslogs-group: vault-rebalance-logs
     build:
       context: .
       target: keeper-liquidation
