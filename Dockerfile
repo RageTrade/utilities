@@ -16,6 +16,7 @@ RUN yarn install --frozen-lockfile
 
 COPY dist ./dist
 COPY config.ts ./config.ts
+COPY ecosystem.config.js ./ecosystem.config.js
 
 CMD [ "pm2-runtime", "ecosystem.config.js", "--only", "keeper-liquidation" ]
 
@@ -37,6 +38,7 @@ RUN yarn install --frozen-lockfile
 
 COPY dist ./dist
 COPY config.ts ./config.ts
+COPY ecosystem.config.js ./ecosystem.config.js
 
 CMD [ "pm2-runtime", "ecosystem.config.js", "--only", "vault-rebalance" ]
 
@@ -58,5 +60,6 @@ RUN yarn install --frozen-lockfile
 
 COPY dist ./dist
 COPY config.ts ./config.ts
+COPY ecosystem.config.js ./ecosystem.config.js
 
 CMD [ "pm2-runtime", "ecosystem.config.js", "--only", "arb-bot" ]
