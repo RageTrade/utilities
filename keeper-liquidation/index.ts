@@ -96,9 +96,9 @@ const liquidate = async () => {
 }
 
 (async () => {
-  const provider = new ethers.providers.AlchemyWebSocketProvider(
-    NETWORK_INF0.CHAIN_ID,
-    NETWORK_INF0.ALCHEMY_API_KEY
+  const provider = new ethers.providers.StaticJsonRpcProvider(
+    NETWORK_INF0.HTTP_RPC_URL,
+    NETWORK_INF0.CHAIN_ID
   )
 
   const signer = new ethers.Wallet(NETWORK_INF0.PK_LIQUIDATTION, provider)

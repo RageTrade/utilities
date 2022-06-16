@@ -38,9 +38,9 @@ export default class RageTrade {
   private contracts: any
 
   constructor(initOptions: InitOptions) {
-    this.provider = new providers.AlchemyWebSocketProvider(
-      NETWORK_INF0.CHAIN_ID,
-      NETWORK_INF0.ALCHEMY_API_KEY
+    this.provider = new providers.StaticJsonRpcProvider(
+      NETWORK_INF0.HTTP_RPC_URL,
+      NETWORK_INF0.CHAIN_ID
     )
 
     initOptions.isPriceArb

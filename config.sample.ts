@@ -8,7 +8,6 @@ export const PRE_FLIGHT_CHECK = {
 export const NETWORK_INF0 = {
   CHAIN_ID: 421611,
   BLOCK_EXPLORER_URL: 'https://testnet.arbiscan.io/',
-  ALCHEMY_API_KEY: '',
   BLOCK_EXPLORER_API: '',
   PK_VAULT_REBALANCE: '',
   PK_LIQUIDATTION: '',
@@ -23,8 +22,8 @@ export const NETWORK_INF0 = {
 
 export const AMM_CONFIG = {
   FEE: 0.0015,
-  ACCOUNT_ID: 0,
   POOL_ID: 0,
+  ACCOUNT_ID: 0,
 }
 
 export const FTX_CONFIG = {
