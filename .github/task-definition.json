@@ -1,0 +1,134 @@
+{
+  "taskDefinitionArn": "arn:aws:ecs:us-east-1:727409640054:task-definition/run-arb-bot:2",
+  "containerDefinitions": [
+      {
+          "name": "arb-bot-container",
+          "image": "727409640054.dkr.ecr.us-east-1.amazonaws.com/arb-bot",
+          "cpu": 1024,
+          "memory": 512,
+          "memoryReservation": 256,
+          "portMappings": [],
+          "essential": true,
+          "environment": [],
+          "mountPoints": [],
+          "volumesFrom": [],
+          "secrets": [
+              {
+                  "name": "ACCESS_KEY",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "ACCESS_SECRET",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "ARB_BOT_WEBHOOK_URL",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "BLOCK_EXPLORER_API",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "FUNDING_ARB_ACCOUNT_ID",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "HTTP_RPC_URL",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "LIQUIDATION_WEBHOOK_URL",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "PK_FUNDING_ARB_BOT",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "PK_LIQUIDATION",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "PK_PRICE_ARB_BOT",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "PK_VAULT_REBALANCE",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "PRICE_ARB_ACCOUNT_ID",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "REBALANCE_WEBHOOK_URL",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "SUB_ACCOUNT_ID",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              },
+              {
+                  "name": "WSS_RPC_URL",
+                  "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
+              }
+          ],
+          "logConfiguration": {
+              "logDriver": "awslogs",
+              "options": {
+                  "awslogs-group": "arb-bot-logs-ecs",
+                  "awslogs-region": "us-east-1",
+                  "awslogs-stream-prefix": "ecs"
+              }
+          }
+      }
+  ],
+  "family": "run-arb-bot",
+  "executionRoleArn": "arn:aws:iam::727409640054:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "revision": 2,
+  "volumes": [],
+  "status": "ACTIVE",
+  "requiresAttributes": [
+      {
+          "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+      },
+      {
+          "name": "ecs.capability.execution-role-awslogs"
+      },
+      {
+          "name": "com.amazonaws.ecs.capability.ecr-auth"
+      },
+      {
+          "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+      },
+      {
+          "name": "ecs.capability.secrets.asm.environment-variables"
+      },
+      {
+          "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
+      },
+      {
+          "name": "ecs.capability.execution-role-ecr-pull"
+      },
+      {
+          "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+      },
+      {
+          "name": "ecs.capability.task-eni"
+      }
+  ],
+  "placementConstraints": [],
+  "compatibilities": [
+      "EC2"
+  ],
+  "requiresCompatibilities": [
+      "EC2"
+  ],
+  "cpu": "1024",
+  "memory": "512",
+  "registeredAt": "2022-06-20T12:06:32.365Z",
+  "registeredBy": "arn:aws:iam::727409640054:user/ProtoDev",
+  "tags": []
+}
