@@ -10,7 +10,7 @@ export const NETWORK_INF0 = {
   BLOCK_EXPLORER_URL: 'https://testnet.arbiscan.io/',
   BLOCK_EXPLORER_API: '',
   PK_VAULT_REBALANCE: '',
-  PK_LIQUIDATTION: '',
+  PK_LIQUIDATION: '',
   PK_PRICE_ARB_BOT: '',
   PK_FUNDING_ARB_BOT: '',
   WSS_RPC_URL: '',
@@ -23,16 +23,24 @@ export const NETWORK_INF0 = {
 export const AMM_CONFIG = {
   FEE: 0.0015,
   POOL_ID: 0,
-  ACCOUNT_ID: 0,
+  PRICE_ARB_ACCOUNT_ID: 0,
+  FUNDING_ARB_ACCOUNT_ID: 0
 }
 
 export const FTX_CONFIG = {
   FEE: 0.000665,
   SCALING_FACTOR: 1000,
   MARKET_ID: 'ETH-PERP',
-  SUB_ACCOUNT_ID: '',
-  ACCESS_KEY: '',
-  ACCESS_SECRET: '',
+  PRICE_ARB_ACCOUNT: {
+    SUB_ACCOUNT_ID: '',
+    ACCESS_KEY: '',
+    ACCESS_SECRET: '',
+  },
+  FUNDING_ARB_ACCOUNT: {
+    SUB_ACCOUNT_ID: '',
+    ACCESS_KEY: '',
+    ACCESS_SECRET: '',
+  }
 }
 
 export const STRATERGY_CONFIG = {

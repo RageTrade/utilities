@@ -1,5 +1,5 @@
 import fetch from 'cross-fetch'
-import { NETWORK_INF0 } from '../config'
+import { NETWORK_INF0 } from '../config-env'
 
 const logger: Record<string, string> = {
   ARB_BOT: NETWORK_INF0.ARB_BOT_WEBHOOK_URL,

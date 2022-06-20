@@ -1,5 +1,5 @@
 import { log } from '../../discord-logger'
-import { FTX_CONFIG, PRE_FLIGHT_CHECK, STRATERGY_CONFIG } from '../../config'
+import { FTX_CONFIG, PRE_FLIGHT_CHECK, STRATERGY_CONFIG } from '../../config-env'
 import { AccountSummary, FuturesPosition, OrderSide, RestClient } from 'ftx-api'
 import { InitOptions } from '../../types'
 

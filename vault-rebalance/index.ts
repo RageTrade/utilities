@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import { CurveYieldStrategy, getVaultContracts } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
-import { NETWORK_INF0 } from '../config'
+import { NETWORK_INF0 } from '../config-env'
 
 let isReset: boolean
 let vault: CurveYieldStrategy

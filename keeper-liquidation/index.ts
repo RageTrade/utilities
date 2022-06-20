@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import { getContracts } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
-import { NETWORK_INF0, AMM_CONFIG } from '../config'
+import { NETWORK_INF0, AMM_CONFIG } from '../config-env'
 
 import {
   ClearingHouse,
@@ -101,7 +101,7 @@ const liquidate = async () => {
     NETWORK_INF0.CHAIN_ID
   )
 
-  const signer = new ethers.Wallet(NETWORK_INF0.PK_LIQUIDATTION, provider)
+  const signer = new ethers.Wallet(NETWORK_INF0.PK_LIQUIDATION, provider)
 
   ;({ clearingHouse, clearingHouseLens } = await getContracts(signer))
 

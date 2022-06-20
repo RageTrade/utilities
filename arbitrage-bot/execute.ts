@@ -2,7 +2,7 @@ import Ftx from './ftx'
 import cron from 'node-cron'
 import RageTrade from './rage-trade'
 import { log } from '../discord-logger'
-import { AMM_CONFIG, FTX_CONFIG, STRATERGY_CONFIG } from '../config'
+import { AMM_CONFIG, FTX_CONFIG, STRATERGY_CONFIG } from '../config-env'
 import { formatUsdc } from '@ragetrade/sdk'
 import { formatEther } from 'ethers/lib/utils'
 import {

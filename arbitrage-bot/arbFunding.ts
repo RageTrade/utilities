@@ -7,7 +7,7 @@ import {
   FTX_CONFIG,
   NETWORK_INF0,
   STRATERGY_CONFIG,
-} from '../config'
+} from '../config-env'
 import { formatEther } from 'ethers/lib/utils'
 import { estimateFundingArbProfit } from './helpers'
 
