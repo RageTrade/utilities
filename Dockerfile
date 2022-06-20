@@ -15,7 +15,7 @@ RUN yarn global add pm2
 RUN yarn install --frozen-lockfile
 
 COPY dist ./dist
-COPY config.ts ./config.ts
+COPY config-env.ts ./config-env.ts
 COPY ecosystem.config.js ./ecosystem.config.js
 
 CMD [ "pm2-runtime", "ecosystem.config.js", "--only", "arb-bot" ]
