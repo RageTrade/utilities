@@ -1,5 +1,5 @@
 import Ftx from '.'
-import { FTX_CONFIG, AMM_CONFIG } from '../../config'
+import { FTX_CONFIG, AMM_CONFIG } from '../../config-env'
 
 const ftx = new Ftx({
   isPriceArb: true,

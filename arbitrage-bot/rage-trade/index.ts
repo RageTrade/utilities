@@ -25,7 +25,7 @@ import {
   NETWORK_INF0,
   PRE_FLIGHT_CHECK,
   STRATERGY_CONFIG,
-} from '../../config'
+} from '../../config-env'
 import { log } from '../../discord-logger'
 
 import { InitOptions } from '../../types'

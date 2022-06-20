@@ -1,5 +1,5 @@
 import RageTrade from './index'
-import { AMM_CONFIG } from '../../config'
+import { AMM_CONFIG } from '../../config-env'
 
 async function main() {
   const rageTrade = new RageTrade({
