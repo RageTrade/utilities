@@ -6,13 +6,13 @@ on:
       - main
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
-  ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
-  ECS_TASK_DEFINITION: ${{ secrets.ECS_TASK_DEFINITION }}
+  AWS_REGION: 'us-east-1'
+  ECR_REPOSITORY: '727409640054.dkr.ecr.us-east-1.amazonaws.com/arb-bot'
+  ECS_SERVICE: 'arb-bot-service'
+  ECS_CLUSTER: 'arb-bot-cluster'
+  ECS_TASK_DEFINITION: './.github/task-definition.json'
 
-  CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+  CONTAINER_NAME: 'arb-bot-container'
 
 jobs:
   deploy:
