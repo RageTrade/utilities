@@ -1,13 +1,12 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:us-east-1:727409640054:task-definition/run-arb-bot:10",
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:727409640054:task-definition/run-arb-bot:12",
     "containerDefinitions": [
         {
             "name": "arb-bot-container",
-            "image": "727409640054.dkr.ecr.us-east-1.amazonaws.com/arb-bot:1c2c5168489603bb5f9514da1e22c219f16c074c",
+            "image": "727409640054.dkr.ecr.us-east-1.amazonaws.com/arb-bot:b859e90056065869666ffb9a2ffd3b82b9d3b76f",
             "cpu": 1024,
             "memory": 512,
             "memoryReservation": 256,
-            "links": [],
             "portMappings": [
                 {
                     "containerPort": 80,
@@ -21,10 +20,7 @@
                 }
             ],
             "essential": true,
-            "entryPoint": [],
-            "command": [],
             "environment": [],
-            "environmentFiles": [],
             "mountPoints": [],
             "volumesFrom": [],
             "secrets": [
@@ -33,28 +29,19 @@
                     "valueFrom": "arn:aws:secretsmanager:us-east-1:727409640054:secret:arb-bot-Y8NY6g"
                 }
             ],
-            "dnsServers": [],
-            "dnsSearchDomains": [],
-            "extraHosts": [],
-            "dockerSecurityOptions": [],
-            "dockerLabels": {},
-            "ulimits": [],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
                     "awslogs-group": "arb-bot-logs-ecs",
                     "awslogs-region": "us-east-1",
                     "awslogs-stream-prefix": "ecs"
-                },
-                "secretOptions": []
-            },
-            "systemControls": []
+                }
+            }
         }
     ],
     "family": "run-arb-bot",
     "executionRoleArn": "arn:aws:iam::727409640054:role/ecsTaskExecutionRole",
-    "networkMode": "awsvpc",
-    "revision": 10,
+    "revision": 12,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -74,23 +61,15 @@
             "name": "ecs.capability.secrets.asm.environment-variables"
         },
         {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.17"
-        },
-        {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
         },
         {
             "name": "ecs.capability.execution-role-ecr-pull"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
-        },
-        {
-            "name": "ecs.capability.task-eni"
         }
     ],
     "placementConstraints": [],
     "compatibilities": [
+        "EXTERNAL",
         "EC2"
     ],
     "requiresCompatibilities": [
@@ -98,7 +77,7 @@
     ],
     "cpu": "1024",
     "memory": "512",
-    "registeredAt": "2022-06-20T16:54:33.400Z",
+    "registeredAt": "2022-06-21T04:48:12.821Z",
     "registeredBy": "arn:aws:iam::727409640054:user/ProtoDev",
     "tags": [
         {
