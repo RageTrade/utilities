@@ -1,33 +1,32 @@
 import {
   ClearingHouse,
   findBlockByTimestamp,
+  formatFundingRate,
   formatUsdc,
-  fromQ128,
   getContracts,
   parseUsdc,
+  priceToPriceX128,
   priceToSqrtPriceX96,
   priceX128ToPrice,
-  Q128,
   sqrtPriceX96ToPrice,
-  VPoolWrapper,
   SwapSimulator,
-  priceToPriceX128,
-  toQ128,
   tickToPrice,
-  formatFundingRate,
+  toQ128,
+  VPoolWrapper,
 } from '@ragetrade/sdk'
-import { ClearingHouseLens } from '@ragetrade/sdk/dist/typechain/core'
+import { ClearingHouseLens, IOracle } from '@ragetrade/sdk/dist/typechain/core'
 import { IUniswapV3Pool } from '@ragetrade/sdk/dist/typechain/vaults'
 import { BigNumber, providers, Wallet } from 'ethers'
 import { formatEther, parseEther } from 'ethers/lib/utils'
 import {
   AMM_CONFIG,
+  ARB_GAS_UPPER_BOUND,
+  BOT_WATCHER_ROLE,
   NETWORK_INF0,
   PRE_FLIGHT_CHECK,
   STRATERGY_CONFIG,
 } from '../../config-env'
 import { log } from '../../discord-logger'
-
 import { InitOptions } from '../../types'
 
 export default class RageTrade {
@@ -65,7 +64,9 @@ export default class RageTrade {
     await this._preFlightChecks()
 
     setInterval(async () => this._checkBlockFreshness(), 10 * 60 * 100)
-    setInterval(async () => this._updateCurrentFundingRate(), 5 * 60 * 100)
+    setInterval(async () => {
+      this.currentFundingRate = await this.getCurrentFundingRate()
+    }, 5 * 60 * 100)
 
     this.isInitialized = true
   }
@@ -80,7 +81,7 @@ export default class RageTrade {
       (await this.wallet.getBalance()).toBigInt() <
       PRE_FLIGHT_CHECK.ARB_ETH_BAL_THRESHOLD
     ) {
-      await log('Arbitrum account out of gas', 'ARB_BOT')
+      await log(`${BOT_WATCHER_ROLE} Arbitrum account out of gas`, 'ARB_BOT')
       throw new Error('Arbitrum account out of gas')
     }
 
@@ -88,7 +89,10 @@ export default class RageTrade {
       .clearingHouseLens as ClearingHouseLens).getAccountInfo(this.accountId)
 
     if (accInfo.owner != this.wallet.address) {
-      await log('Account owner does not equal wallet address', 'ARB_BOT')
+      await log(
+        '${BOT_WATCHER_ROLE} Account owner does not equal wallet address',
+        'ARB_BOT'
+      )
       throw new Error('Account owner does not equal wallet address')
     }
   }
@@ -103,35 +107,6 @@ export default class RageTrade {
       throw new Error('Stale block/state or provider is lagging')
   }
 
-  // +ve long pays short
-  async _updateCurrentFundingRate() {
-    // const sumAX128 = await this.contracts.eth_vPoolWrapper.getExtrapolatedSumAX128();
-    // const currentTimestamp = Math.floor(Date.now() / 1000);
-    // const block = await findBlockByTimestamp(this.provider, currentTimestamp - 60 * 60);
-    // const sumAOldX128 = await this.contracts.eth_vPoolWrapper.getExtrapolatedSumAX128({
-    //   blockTag: block.number,
-    // });
-    // const priceX128 = await this.contracts.eth_oracle.getTwapPriceX128(60 * 60);
-
-    // this.currentFundingRate = fromQ128(
-    //   sumAX128
-    //     .sub(sumAOldX128)
-    //     .mul(Q128)
-    //     .div(priceX128)
-    //     .div(currentTimestamp - block.timestamp)
-    // ) * -1 * 60 * 60
-
-    const { eth_vPoolWrapper } = this.contracts
-
-    const {
-      fundingRateX128,
-    } = await (eth_vPoolWrapper as VPoolWrapper).getFundingRateAndVirtualPrice()
-    const fundingRatePerSecond = fromQ128(fundingRateX128)
-
-    // console.log(-fundingRatePerSecond * 60 * 60)
-  }
-
-  // add deviation check
   /** queries current Rage price from contracts */
   async queryRagePrice() {
     const { sqrtPriceX96 } = await (this.contracts
@@ -190,10 +165,15 @@ export default class RageTrade {
     )
   }
 
-  // for arb testnet, arbgas returned is 0, so making is constant(1$) for now
   async calculateTradeCost() {
-    // should query Arbitrum mainnet gas price
-    return 1
+    const ethPrice = await priceX128ToPrice(
+      await (this.contracts.eth_oracle as IOracle).getTwapPriceX128(0),
+      6,
+      18
+    )
+    const gasPrice = await this.provider.getGasPrice()
+
+    return Number(formatEther(gasPrice)) * ARB_GAS_UPPER_BOUND * ethPrice
   }
 
   /** calculates swap input and output tokens given trade size (if isNotional false, then potentialArbSize in ETH) */
@@ -331,7 +311,7 @@ export default class RageTrade {
 
     if (newMarginFraction < STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD) {
       await log(
-        `add more margin to RageTrade, margin fraction below ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}, 
+        `${BOT_WATCHER_ROLE} add more margin to RageTrade, margin fraction below ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}, 
         margin fraction before: ${oldMarginFraction},
         margin fraction after current trade: ${newMarginFraction}
         `,
@@ -341,7 +321,7 @@ export default class RageTrade {
 
     if (newMarginFraction < STRATERGY_CONFIG.HARD_MARGIN_RATIO_THRESHOLD) {
       await log(
-        `RT: cannot take further position due to breach of max allowed margin fraction,
+        `${BOT_WATCHER_ROLE} RT: cannot take further position due to breach of max allowed margin fraction,
         margin fraction before: ${oldMarginFraction},
         margin fraction after current trade: ${newMarginFraction}     
         `,

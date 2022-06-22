@@ -121,7 +121,7 @@ const main = async () => {
     arbitrage()
       .then(() => console.log('ARB COMPLETE!'))
       .catch((error) => {
-        console.log(error.message)
+        console.log('FROM LOOP: ', error.message)
       })
   })
 }
@@ -129,5 +129,5 @@ const main = async () => {
 main()
   .then(() => console.log('ARB STARTED!'))
   .catch((error) => {
-    console.log(error.message)
+    console.log('FROM MAIN: ', error.message)
   })

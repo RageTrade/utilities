@@ -1,5 +1,5 @@
 {
-  "name": "ragetrade-scripts",
+  "name": "ragetrade-utilities",
   "version": "1.0.0",
   "description": "scripts for rage-trade ecosystem",
   "main": "index.ts",
@@ -22,7 +22,7 @@
     "uuid": "^8.3.2"
   },
   "dependencies": {
-    "@ragetrade/sdk": "^0.8.0",
+    "@ragetrade/sdk": "^0.9.1",
     "@uniswap/v3-sdk": "^3.8.2",
     "cross-fetch": "^3.1.5",
     "ethers": "^5.6.6",

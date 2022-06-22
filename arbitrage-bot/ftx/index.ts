@@ -1,9 +1,12 @@
 import { log } from '../../discord-logger'
-import { FTX_CONFIG, PRE_FLIGHT_CHECK, STRATERGY_CONFIG } from '../../config-env'
+import {
+  FTX_CONFIG,
+  BOT_WATCHER_ROLE,
+  PRE_FLIGHT_CHECK,
+  STRATERGY_CONFIG,
+} from '../../config-env'
 import { AccountSummary, FuturesPosition, OrderSide, RestClient } from 'ftx-api'
 import { InitOptions } from '../../types'
-
-// track avg position size
 
 export default class Ftx {
   private marketId
@@ -40,7 +43,9 @@ export default class Ftx {
 
   async initialize() {
     await this._preFlightChecks()
-    setInterval(async () => this._updateCurrentFundingRate(), 5 * 60 * 100)
+    setInterval(async () => {
+      this.currentFundingRate = await this.getCurrentFundingRate()
+    }, 5 * 60 * 100)
   }
 
   private _scaleDown(size: number) {
@@ -49,18 +54,6 @@ export default class Ftx {
 
   private _scaleUp(size: number) {
     return size * FTX_CONFIG.SCALING_FACTOR
-  }
-
-  // +ve => longs pays short
-  async _updateCurrentFundingRate() {
-    const markets = (await this.ftxClient.getFundingRates()).result
-
-    for (const each of markets) {
-      if (each.future == 'ETH-PERP') {
-        this.currentFundingRate = each.rate
-        break
-      }
-    }
   }
 
   async netProfit() {
@@ -95,7 +88,7 @@ export default class Ftx {
       accountInfo.result.marginFraction !== null
     ) {
       await log(
-        `insufficient ftx margin fraction, available: ${accountInfo.result.marginFraction},
+        `${BOT_WATCHER_ROLE} insufficient ftx margin fraction, available: ${accountInfo.result.marginFraction},
         required: ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}`,
         'ARB_BOT'
       )
@@ -108,7 +101,7 @@ export default class Ftx {
       accountInfo.result.freeCollateral !== null
     ) {
       await log(
-        `insufficient collateral balance on ftx, available: ${accountInfo.result.freeCollateral},
+        `${BOT_WATCHER_ROLE} insufficient collateral balance on ftx, available: ${accountInfo.result.freeCollateral},
         required: ${PRE_FLIGHT_CHECK.FTX_BALANCE_THRESHOLD}`,
         'ARB_BOT'
       )
@@ -187,7 +180,7 @@ export default class Ftx {
 
     if (newMarginFraction < STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD) {
       await log(
-        `add more margin to ftx, margin fraction below ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}, 
+        `${BOT_WATCHER_ROLE} add more margin to ftx, margin fraction below ${STRATERGY_CONFIG.SOFT_MARGIN_RATIO_THRESHOLD}, 
         margin fraction before: ${oldMarginFraction},
         margin fraction after current trade: ${newMarginFraction}
         `,
@@ -197,7 +190,7 @@ export default class Ftx {
 
     if (newMarginFraction < STRATERGY_CONFIG.HARD_MARGIN_RATIO_THRESHOLD) {
       await log(
-        `FTX: cannot take further position due to breach of max allowed margin fraction,
+        `${BOT_WATCHER_ROLE} FTX: cannot take further position due to breach of max allowed margin fraction,
         margin fraction before: ${oldMarginFraction},
         margin fraction after current trade: ${newMarginFraction}     
         `,

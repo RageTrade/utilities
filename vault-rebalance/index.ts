@@ -4,7 +4,12 @@ import { ethers } from 'ethers'
 import { CurveYieldStrategy, getVaultContracts } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
-import { NETWORK_INF0 } from '../config-env'
+import {
+  NETWORK_INF0,
+  CRON_REBALANCE,
+  BOT_WATCHER_ROLE,
+  CRON_CLOSE_TOKEN_POSITION,
+} from '../config-env'
 
 let isReset: boolean
 let vault: CurveYieldStrategy
@@ -39,7 +44,10 @@ const rebalance = async () => {
 
     for (const each of receipt.logs) {
       if (each.topics[0] == TOKEN_POSITION_CLOSED) {
-        await log('reset happend internally during rebalance', 'REBALANCE')
+        await log(
+          `${BOT_WATCHER_ROLE} reset happend internally during rebalance`,
+          'REBALANCE'
+        )
       }
     }
   } else {
@@ -60,7 +68,7 @@ const closeTokenPosition = async () => {
   await tx.wait()
 
   await log(
-    `token position closed! ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx.hash}`,
+    `${BOT_WATCHER_ROLE} token position closed! ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx.hash}`,
     'REBALANCE'
   )
 
@@ -68,7 +76,8 @@ const closeTokenPosition = async () => {
   await log(`updated reset value is ${isReset} `, 'REBALANCE')
 }
 
-cron.schedule('*/30 * * * * *', () => {
+cron.schedule(CRON_REBALANCE, async () => {
+  isReset = await vault.isReset()
   if (isReset) return
 
   rebalance()
@@ -79,7 +88,8 @@ cron.schedule('*/30 * * * * *', () => {
     })
 })
 
-cron.schedule('*/1 * * * *', async () => {
+cron.schedule(CRON_CLOSE_TOKEN_POSITION, async () => {
+  isReset = await vault.isReset()
   if (!isReset) return
 
   closeTokenPosition()

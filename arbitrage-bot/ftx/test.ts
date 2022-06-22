@@ -30,7 +30,6 @@ async function main() {
   // console.log(await ftx.getCurrentFundingRate())
   // console.log(await ftx.updatePosition(0.01 * 1000))
 
-  // console.log(await ftx._updateCurrentFundingRate())
   // console.log('currentFundingRate', ftx.currentFundingRate)
 }
 
