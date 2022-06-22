@@ -2,18 +2,23 @@ import Ftx from './ftx'
 import cron from 'node-cron'
 import RageTrade from './rage-trade'
 import { log } from '../discord-logger'
-import { AMM_CONFIG, FTX_CONFIG, STRATERGY_CONFIG } from '../config-env'
+
+import {
+  AMM_CONFIG,
+  BOT_WATCHER_ROLE,
+  FTX_CONFIG,
+  RUNS_TO_LOG_AFTER,
+  STRATERGY_CONFIG,
+} from '../config-env'
+
 import { formatUsdc } from '@ragetrade/sdk'
 import { formatEther } from 'ethers/lib/utils'
+
 import {
   isMovementWithinSpread,
   calculateFinalPrice,
   calculateArbRevenue,
 } from './helpers'
-
-// fix partial
-// pre-flight checks
-// open github issues (possible optimizations)
 
 const ftx = new Ftx({
   isPriceArb: true,
@@ -26,7 +31,6 @@ const rageTrade = new RageTrade({
 })
 
 let currentRuns = 0
-let runsToLogAfter = 30
 
 let totalTrades = 0
 let totalRevesedTrades = 0
@@ -62,8 +66,6 @@ const main = async () => {
     ftxAccountMarketValue = await ftx.queryFtxMargin()
     rageAccountMarketValue = await rageTrade.getRageMarketValue()
 
-    const previousSum = lastRecordedAccountMarketValueSum
-
     const totalTradesOnFtx = await ftx.getTotalTrades(
       Math.floor(Date.now() / 1000) - 15 * 60,
       Math.floor(Date.now() / 1000)
@@ -74,7 +76,7 @@ const main = async () => {
       rageFundingRate: rageFundingRate,
       ftxAccountMarketValue: ftxAccountMarketValue,
       rageAccountMarketValue: rageAccountMarketValue,
-      previousMarketValueSum: previousSum,
+      previousMarketValueSum: lastRecordedAccountMarketValueSum,
       currentMarketValueSum: ftxAccountMarketValue + rageAccountMarketValue,
       changeInSumOfMarketValue:
         ftxAccountMarketValue +
@@ -88,8 +90,14 @@ const main = async () => {
       totalTradesOnFtx: totalTradesOnFtx,
     }
 
-    if (data.changeInSumOfMarketValue * (-1) > (0.01 * data.currentMarketValueSum)) {
-      log('<@&987030632704118835> market value decreased by more than 1%', 'ARB_BOT')
+    if (
+      data.changeInSumOfMarketValue * -1 >
+      0.01 * data.currentMarketValueSum
+    ) {
+      log(
+        `${BOT_WATCHER_ROLE} market value decreased by more than 1%`,
+        'ARB_BOT'
+      )
     }
 
     log(JSON.stringify(data), 'ARB_BOT')
@@ -191,7 +199,11 @@ const main = async () => {
         totalTrades++
       } catch (e) {
         isSuccessful = false
-        await log(`error: reversing position on ftx`, 'ARB_BOT')
+        console.log(`error: reversing position on ftx, ${e}`)
+        await log(
+          `${BOT_WATCHER_ROLE} error: reversing position on ftx`,
+          'ARB_BOT'
+        )
         await ftx.updatePosition(-updatedArbSize)
         totalTrades++
         totalRevesedTrades++
@@ -202,16 +214,14 @@ const main = async () => {
         (await rageTrade.getRagePosition()).eth,
       ])
 
-
       if (isSuccessful) {
-        const data = JSON.stringify(
-          {
-            ftxNetSize: positionPostTrade.result[0].netSize,
-            rageNetSize: ragePosition,
-            ftxPrice: positionPostTrade.result[0].entryPrice,
-            ragePrice: ragePrice,
-            pFinal: pFinal
-          })
+        const data = JSON.stringify({
+          ftxNetSize: positionPostTrade.result[0].netSize,
+          rageNetSize: ragePosition,
+          ftxPrice: positionPostTrade.result[0].entryPrice,
+          ragePrice: ragePrice,
+          pFinal: pFinal,
+        })
 
         console.log(data)
         log(data, 'ARB_BOT')
@@ -231,12 +241,15 @@ const main = async () => {
   cron.schedule(`*/${STRATERGY_CONFIG.FREQUENCY} * * * * *`, async () => {
     currentRuns++
 
-    if (currentRuns === runsToLogAfter) await logState()
+    if (currentRuns === RUNS_TO_LOG_AFTER) await logState()
 
     const startTime = Date.now()
 
     if (cronMutex) {
-      await log('SKIPPING ITERATION, BOT IS ALREADY ARBING', 'ARB_BOT')
+      await log(
+        `${BOT_WATCHER_ROLE} SKIPPING ITERATION, BOT IS ALREADY ARBING`,
+        'ARB_BOT'
+      )
       return
     }
     cronMutex = true
@@ -246,7 +259,7 @@ const main = async () => {
         console.log('ARB COMPLETE!')
       })
       .catch((error: Error) => {
-        console.log(error.name, error.message)
+        console.log('FROM ARBITRAGE: ', error.name, error.message)
       })
       .finally(() => {
         cronMutex = false
