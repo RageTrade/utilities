@@ -143,7 +143,7 @@ export default class Ftx {
 
     let updatedCost: number;
 
-    if(!position.side && !position.cost) {
+    if(!position) {
       updatedCost = size * price
     } else {
       updatedCost =
