@@ -140,7 +140,14 @@ export default class Ftx {
     account: AccountSummary,
     position: FuturesPosition
   ) {
-    const updatedCost =
+
+    let updatedCost: number;
+
+    if(!position.side && !position.cost) {
+      updatedCost = size * price
+    }
+  
+    updatedCost =
       side === position.side
         ? position.cost + size * price
         : position.cost - size * price
