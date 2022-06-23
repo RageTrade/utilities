@@ -145,12 +145,12 @@ export default class Ftx {
 
     if(!position.side && !position.cost) {
       updatedCost = size * price
-    }
-  
-    updatedCost =
+    } else {
+      updatedCost =
       side === position.side
         ? position.cost + size * price
         : position.cost - size * price
+    }
 
     if (updatedCost === 0) {
       return {
