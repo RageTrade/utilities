@@ -102,14 +102,6 @@ const main = async () => {
 
     log(JSON.stringify(data), 'ARB_BOT')
     console.log(JSON.stringify(data))
-
-    lastEthBal = currentEthBal
-    lastRecordedAccountMarketValueSum =
-      ftxAccountMarketValue + rageAccountMarketValue
-
-    currentRuns = 0
-    totalTrades = 0
-    totalRevesedTrades = 0
   }
 
   /** calculates the size of the potential arbitrage in ETH */
@@ -241,7 +233,17 @@ const main = async () => {
   cron.schedule(`*/${STRATERGY_CONFIG.FREQUENCY} * * * * *`, async () => {
     currentRuns++
 
-    if (currentRuns === RUNS_TO_LOG_AFTER) await logState()
+    if (currentRuns === RUNS_TO_LOG_AFTER) {
+      await logState()
+        .catch(e => log(`${BOT_WATCHER_ROLE} error in logging data, ${e.name}`, 'ARB_BOT'))
+        .finally(() => {
+          lastEthBal = currentEthBal
+          lastRecordedAccountMarketValueSum = ftxAccountMarketValue + rageAccountMarketValue
+          currentRuns = 0
+          totalTrades = 0
+          totalRevesedTrades = 0
+        })
+    }
 
     const startTime = Date.now()
 
@@ -256,7 +258,7 @@ const main = async () => {
 
     arbitrage()
       .then(() => {
-        console.log('ARB COMPLETE!')
+        console.log('ARB RUN COMPLETE!')
       })
       .catch((error: Error) => {
         console.log('FROM ARBITRAGE: ', error.name, error.message)
@@ -275,4 +277,4 @@ main()
       'ARB_BOT'
     )
   )
-  .catch((error) => console.log(error.message))
+  .catch((error) => console.log('FROM MAIN: ', error.message))

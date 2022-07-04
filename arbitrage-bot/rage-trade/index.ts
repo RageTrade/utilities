@@ -379,7 +379,8 @@ export default class RageTrade {
       blockTag: (
         await findBlockByTimestamp(
           this.wallet.provider,
-          Math.floor(Date.now() / 1000) - 3600
+          Math.floor(Date.now() / 1000) - 3600,
+          { allowFutureTimestamp: true }
         )
       ).number,
     })
