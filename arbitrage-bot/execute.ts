@@ -58,9 +58,9 @@ const main = async () => {
   const logState = async () => {
     currentEthBal = (await rageTrade.getEthBalanceAndNonce()).ethBal
 
-    const [ftxFundingRate, rageFundingRate] = await Promise.all([
+    const [ftxFundingRate /** rageFundingRate */] = await Promise.all([
       ftx.getCurrentFundingRate(),
-      rageTrade.getCurrentFundingRate(),
+      // rageTrade.getCurrentFundingRate(),
     ])
 
     ftxAccountMarketValue = await ftx.queryFtxMargin()
@@ -73,7 +73,7 @@ const main = async () => {
 
     const data = {
       ftxFundingRate: ftxFundingRate,
-      rageFundingRate: rageFundingRate,
+      // rageFundingRate: rageFundingRate,
       ftxAccountMarketValue: ftxAccountMarketValue,
       rageAccountMarketValue: rageAccountMarketValue,
       previousMarketValueSum: lastRecordedAccountMarketValueSum,
@@ -235,10 +235,13 @@ const main = async () => {
 
     if (currentRuns === RUNS_TO_LOG_AFTER) {
       await logState()
-        .catch(e => log(`${BOT_WATCHER_ROLE} error in logging data, ${e.name}`, 'ARB_BOT'))
+        .catch((e) =>
+          log(`${BOT_WATCHER_ROLE} error in logging data, ${e.name}`, 'ARB_BOT')
+        )
         .finally(() => {
           lastEthBal = currentEthBal
-          lastRecordedAccountMarketValueSum = ftxAccountMarketValue + rageAccountMarketValue
+          lastRecordedAccountMarketValueSum =
+            ftxAccountMarketValue + rageAccountMarketValue
           currentRuns = 0
           totalTrades = 0
           totalRevesedTrades = 0
