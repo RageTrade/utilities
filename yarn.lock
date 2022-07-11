@@ -375,10 +375,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-3.4.2-solc-0.7.tgz#38f4dbab672631034076ccdf2f3201fab1726635"
   integrity sha512-W6QmqgkADuFcTLzHL8vVoNBtkwjvQRpYIAom7KiUNoLKghyx3FgH0GBjt8NRvigV1ZmMOBllvE1By1C+bi8WpA==
 
-"@ragetrade/sdk@^0.9.4":
-  version "0.9.4"
-  resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-0.9.4.tgz#954097436da33f71c3dd9e94ca670580961740ff"
-  integrity sha512-ccHAi3DPtJ81It3d/rNQBliZCYvIaZEN1Dk0AiL/zs+KStaZdS2Ei9cDDsEELlaNcWW2XwGNjEB4rIBkZKSTBg==
+"@ragetrade/sdk@^0.9.5":
+  version "0.9.5"
+  resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-0.9.5.tgz#75ca268ee4cb9853438a8f580fd363c644cbe1a8"
+  integrity sha512-FeeFFh3+di7LqwoLPvA5Z016eptkm3PbrEkvE6a9JG2A2KkYKJB4kVAA8Wz9NQYMvMeR0tklHms2Sm32WO82Cg==
   dependencies:
     "@uniswap/v3-sdk" "^3.8.2"
     ethers "^5.6.2"
