@@ -234,7 +234,7 @@ const main = async () => {
     currentRuns++
 
     if (currentRuns === RUNS_TO_LOG_AFTER) {
-      await logState()
+      logState()
         .catch((e) =>
           log(`${BOT_WATCHER_ROLE} error in logging data, ${e.name}`, 'ARB_BOT')
         )
