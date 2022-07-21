@@ -64,9 +64,9 @@ export default class RageTrade {
     await this._preFlightChecks()
 
     setInterval(async () => this._checkBlockFreshness(), 10 * 60 * 100)
-    setInterval(async () => {
-      this.currentFundingRate = await this.getCurrentFundingRate()
-    }, 5 * 60 * 100)
+    // setInterval(async () => {
+    //   this.currentFundingRate = await this.getCurrentFundingRate()
+    // }, 5 * 60 * 100)
 
     this.isInitialized = true
   }
