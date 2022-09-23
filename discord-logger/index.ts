@@ -5,6 +5,7 @@ const logger: Record<string, string> = {
   ARB_BOT: NETWORK_INF0.ARB_BOT_WEBHOOK_URL,
   REBALANCE: NETWORK_INF0.REBALANCE_WEBHOOK_URL,
   LIQUIDATION: NETWORK_INF0.LIQUIDATION_WEBHOOK_URL,
+  BATCHING_MANAGER: NETWORK_INF0.BATCHING_MANAGER_WEBHOOK_URL,
 }
 
 export const log = async (message: string, channel: string) => {
