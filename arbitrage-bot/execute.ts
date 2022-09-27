@@ -58,50 +58,50 @@ const main = async () => {
   const logState = async () => {
     currentEthBal = (await rageTrade.getEthBalanceAndNonce()).ethBal
 
-    const [ftxFundingRate /** rageFundingRate */] = await Promise.all([
-      ftx.getCurrentFundingRate(),
-      // rageTrade.getCurrentFundingRate(),
-    ])
+    // const [ftxFundingRate /** rageFundingRate */] = await Promise.all([
+    //   ftx.getCurrentFundingRate(),
+    //   // rageTrade.getCurrentFundingRate(),
+    // ])
 
-    ftxAccountMarketValue = await ftx.queryFtxMargin()
-    rageAccountMarketValue = await rageTrade.getRageMarketValue()
+    // ftxAccountMarketValue = await ftx.queryFtxMargin()
+    // rageAccountMarketValue = await rageTrade.getRageMarketValue()
 
-    const totalTradesOnFtx = await ftx.getTotalTrades(
-      Math.floor(Date.now() / 1000) - 15 * 60,
-      Math.floor(Date.now() / 1000)
-    )
+    // const totalTradesOnFtx = await ftx.getTotalTrades(
+    //   Math.floor(Date.now() / 1000) - 15 * 60,
+    //   Math.floor(Date.now() / 1000)
+    // )
 
-    const data = {
-      ftxFundingRate: ftxFundingRate,
-      // rageFundingRate: rageFundingRate,
-      ftxAccountMarketValue: ftxAccountMarketValue,
-      rageAccountMarketValue: rageAccountMarketValue,
-      previousMarketValueSum: lastRecordedAccountMarketValueSum,
-      currentMarketValueSum: ftxAccountMarketValue + rageAccountMarketValue,
-      changeInSumOfMarketValue:
-        ftxAccountMarketValue +
-        rageAccountMarketValue -
-        lastRecordedAccountMarketValueSum,
-      currentEthBalance: currentEthBal,
-      previousEthBalance: lastEthBal,
-      changeInEthBalance: currentEthBal - lastEthBal,
-      totalTradesAttemptedOnRage: totalTrades,
-      totalTradesRevertedOnRage: totalRevesedTrades,
-      totalTradesOnFtx: totalTradesOnFtx,
-    }
+    // const data = {
+    //   ftxFundingRate: ftxFundingRate,
+    //   // rageFundingRate: rageFundingRate,
+    //   ftxAccountMarketValue: ftxAccountMarketValue,
+    //   rageAccountMarketValue: rageAccountMarketValue,
+    //   previousMarketValueSum: lastRecordedAccountMarketValueSum,
+    //   currentMarketValueSum: ftxAccountMarketValue + rageAccountMarketValue,
+    //   changeInSumOfMarketValue:
+    //     ftxAccountMarketValue +
+    //     rageAccountMarketValue -
+    //     lastRecordedAccountMarketValueSum,
+    //   currentEthBalance: currentEthBal,
+    //   previousEthBalance: lastEthBal,
+    //   changeInEthBalance: currentEthBal - lastEthBal,
+    //   totalTradesAttemptedOnRage: totalTrades,
+    //   totalTradesRevertedOnRage: totalRevesedTrades,
+    //   totalTradesOnFtx: totalTradesOnFtx,
+    // }
 
-    if (
-      data.changeInSumOfMarketValue * -1 >
-      0.01 * data.currentMarketValueSum
-    ) {
-      log(
-        `${BOT_WATCHER_ROLE} market value decreased by more than 1%`,
-        'ARB_BOT'
-      )
-    }
+    // if (
+    //   data.changeInSumOfMarketValue * -1 >
+    //   0.01 * data.currentMarketValueSum
+    // ) {
+    //   log(
+    //     `${BOT_WATCHER_ROLE} market value decreased by more than 1%`,
+    //     'ARB_BOT'
+    //   )
+    // }
 
-    log(JSON.stringify(data), 'ARB_BOT')
-    console.log(JSON.stringify(data))
+    // log(JSON.stringify(data), 'ARB_BOT')
+    // console.log(JSON.stringify(data))
   }
 
   /** calculates the size of the potential arbitrage in ETH */
@@ -196,7 +196,7 @@ const main = async () => {
           `${BOT_WATCHER_ROLE} error: reversing position on ftx`,
           'ARB_BOT'
         )
-        await ftx.updatePosition(-updatedArbSize)
+        // await ftx.updatePosition(-updatedArbSize)
         totalTrades++
         totalRevesedTrades++
       }
@@ -215,7 +215,7 @@ const main = async () => {
           pFinal: pFinal,
         })
 
-        console.log(data)
+        console.log('omitted for testnet')
         log(data, 'ARB_BOT')
       }
     } else {

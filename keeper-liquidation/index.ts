@@ -1,7 +1,7 @@
 import cron from 'node-cron'
 
 import { ethers } from 'ethers'
-import { getContracts } from '@ragetrade/sdk'
+import { getCoreContracts } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
 import { NETWORK_INF0, AMM_CONFIG } from '../config-env'
@@ -34,7 +34,7 @@ const hasTraderPosition = async (accountId: number) => {
     accountId,
     AMM_CONFIG.POOL_ID
   )
-  return netTraderPosition && netTraderPosition.gt(0)
+  return netTraderPosition && !netTraderPosition.eq(0)
 }
 
 const hasLiquiditiyPosition = async (accountId: number) => {
@@ -103,7 +103,7 @@ const liquidate = async () => {
 
   const signer = new ethers.Wallet(NETWORK_INF0.PK_LIQUIDATION, provider)
 
-  ;({ clearingHouse, clearingHouseLens } = await getContracts(signer))
+  ;({ clearingHouse, clearingHouseLens } = await getCoreContracts(signer))
 
   cron.schedule('*/3 * * * *', () => {
     liquidate()

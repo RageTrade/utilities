@@ -3,7 +3,7 @@ import {
   findBlockByTimestamp,
   formatFundingRate,
   formatUsdc,
-  getContracts,
+  getCoreContracts,
   parseUsdc,
   priceToPriceX128,
   priceToSqrtPriceX96,
@@ -13,9 +13,9 @@ import {
   tickToPrice,
   toQ128,
   VPoolWrapper,
+  IUniswapV3Pool,
 } from '@ragetrade/sdk'
 import { ClearingHouseLens, IOracle } from '@ragetrade/sdk/dist/typechain/core'
-import { IUniswapV3Pool } from '@ragetrade/sdk/dist/typechain/vaults'
 import { BigNumber, providers, Wallet } from 'ethers'
 import { formatEther, parseEther } from 'ethers/lib/utils'
 import {
@@ -72,7 +72,7 @@ export default class RageTrade {
   }
 
   private async _setupContracts() {
-    this.contracts = await getContracts(this.wallet)
+    this.contracts = await getCoreContracts(this.wallet)
   }
 
   /** checks for fatal errors which should prevent arb transactions from occuring */

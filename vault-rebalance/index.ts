@@ -1,7 +1,7 @@
 import cron from 'node-cron'
 
 import { ethers } from 'ethers'
-import { CurveYieldStrategy, getVaultContracts } from '@ragetrade/sdk'
+import { CurveYieldStrategy, getTricryptoVaultContracts } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
 import {
@@ -22,7 +22,7 @@ const signer = new ethers.Wallet(NETWORK_INF0.PK_VAULT_REBALANCE, provider)
 const TOKEN_POSITION_CLOSED =
   '0x9a94a63b02012d6753ed863b962aceb756429b4265fc327391dd05fb24d4502b'
 
-getVaultContracts(signer).then(
+getTricryptoVaultContracts(signer).then(
   (contracts) => (vault = contracts.curveYieldStrategy)
 )
 
