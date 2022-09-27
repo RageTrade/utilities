@@ -1,7 +1,12 @@
 import cron from 'node-cron'
 
 import { ethers } from 'ethers'
-import { CurveYieldStrategy, getGmxVaultContracts, getTricryptoVaultContracts, GMXYieldStrategy } from '@ragetrade/sdk'
+import {
+  CurveYieldStrategy,
+  getGmxVaultContracts,
+  getTricryptoVaultContracts,
+  GMXYieldStrategy,
+} from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
 import {

@@ -1,29 +1,26 @@
 version: '3.4'
 services:
   arb-bot:
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: us-east-1
-        awslogs-group: arb-bot-logs
     build:
       context: .
       target: arb-bot
   vault-rebalance:
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: us-east-1
-        awslogs-group: keeper-liquidation-logs
     build:
       context: .
       target: vault-rebalance
+  vault-rebalance-gmx:
+    build:
+      context: .
+      target: vault-rebalance-gmx
+  batching-manager:
+    build:
+      context: .
+      target: batching-manager
   keeper-liquidation:
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: us-east-1
-        awslogs-group: vault-rebalance-logs
     build:
       context: .
       target: keeper-liquidation
+  oracles:
+    build:
+      context: .
+      target: oracles
