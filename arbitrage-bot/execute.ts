@@ -183,7 +183,7 @@ const main = async () => {
 
     if (potentialArbProfit > STRATERGY_CONFIG.MIN_NOTIONAL_PROFIT) {
       let isSuccessful = false
-      const positionPostTrade = await ftx.updatePosition(updatedArbSize)
+      // const positionPostTrade = await ftx.updatePosition(updatedArbSize)
 
       try {
         await rageTrade.updatePosition(updatedArbSize, pFinal)
@@ -191,11 +191,11 @@ const main = async () => {
         totalTrades++
       } catch (e) {
         isSuccessful = false
-        console.log(`error: reversing position on ftx, ${e}`)
-        await log(
-          `${BOT_WATCHER_ROLE} error: reversing position on ftx`,
-          'ARB_BOT'
-        )
+        // console.log(`error: reversing position on ftx, ${e}`)
+        // await log(
+        //   `${BOT_WATCHER_ROLE} error: reversing position on ftx`,
+        //   'ARB_BOT'
+        // )
         // await ftx.updatePosition(-updatedArbSize)
         totalTrades++
         totalRevesedTrades++
@@ -207,16 +207,16 @@ const main = async () => {
       ])
 
       if (isSuccessful) {
-        const data = JSON.stringify({
-          ftxNetSize: positionPostTrade.result[0].netSize,
-          rageNetSize: ragePosition,
-          ftxPrice: positionPostTrade.result[0].entryPrice,
-          ragePrice: ragePrice,
-          pFinal: pFinal,
-        })
+        // const data = JSON.stringify({
+        //   ftxNetSize: positionPostTrade.result[0].netSize,
+        //   rageNetSize: ragePosition,
+        //   ftxPrice: positionPostTrade.result[0].entryPrice,
+        //   ragePrice: ragePrice,
+        //   pFinal: pFinal,
+        // })
 
         console.log('omitted for testnet')
-        log(data, 'ARB_BOT')
+        // log(data, 'ARB_BOT')
       }
     } else {
       await log(

@@ -10,7 +10,8 @@
     "batching-manager/**/*",
     "keeper-liquidation/**/*",
     "scripts/**/*",
-    "vault-rebalance/**/*"
+    "vault-rebalance/**/*",
+    "mock-oracles"
   ],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
