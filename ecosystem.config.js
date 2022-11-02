@@ -47,4 +47,20 @@ module.exports = [
     combine_logs: true,
     merge_logs: true,
   },
+  {
+    script: 'dist/batching-manager/dn-gmx-batching-manager.js',
+    name: 'dn-gmx-batching-manager',
+    out_file: '.pm2/logs/output.log',
+    error_file: '.pm2/logs/error.log',
+    combine_logs: true,
+    merge_logs: true,
+  },
+  {
+    script: 'dist/vault-rebalance/dn.js',
+    name: 'dn-rebalance',
+    out_file: '.pm2/logs/output.log',
+    error_file: '.pm2/logs/error.log',
+    combine_logs: true,
+    merge_logs: true,
+  },
 ]
