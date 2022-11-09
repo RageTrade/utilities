@@ -8,6 +8,8 @@ import {
 import { AccountSummary, FuturesPosition, OrderSide, RestClient } from 'ftx-api'
 import { InitOptions } from '../../types'
 
+const fetch = require('cross-fetch')
+
 export default class Ftx {
   private marketId
   private ftxClient
@@ -114,8 +116,11 @@ export default class Ftx {
   }
 
   async queryFtxPrice() {
-    return ((await this.ftxClient.getFuture(this.marketId)) as any).result!
-      .mark! as number
+    // return ((await this.ftxClient.getFuture(this.marketId)) as any).result!
+    //   .mark! as number
+
+    const price = Number((await (await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT')).json()).price)
+    return price
   }
 
   async queryFtxMargin() {
