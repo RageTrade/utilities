@@ -1,9 +1,5 @@
 version: '3.4'
 services:
-  arb-bot:
-    build:
-      context: .
-      target: arb-bot
   vault-rebalance:
     build:
       context: .
@@ -20,7 +16,11 @@ services:
     build:
       context: .
       target: keeper-liquidation
-  oracles:
+  dn-gmx-batching-manager:
     build:
       context: .
-      target: oracles
+      target: dn-gmx-batching-manager
+  dn-rebalance:
+    build:
+      context: .
+      target: dn-rebalance
