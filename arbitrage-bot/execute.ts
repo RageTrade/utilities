@@ -46,7 +46,7 @@ let lastRecordedAccountMarketValueSum = 0
 const main = async () => {
   let cronMutex = false
 
-  await ftx.initialize()
+  // await ftx.initialize()
   await rageTrade.initialize()
 
   const ftxFee = FTX_CONFIG.FEE
@@ -58,47 +58,47 @@ const main = async () => {
   const logState = async () => {
     currentEthBal = (await rageTrade.getEthBalanceAndNonce()).ethBal
 
-    const [ftxFundingRate /** rageFundingRate */] = await Promise.all([
-      ftx.getCurrentFundingRate(),
-      // rageTrade.getCurrentFundingRate(),
-    ])
+    // const [ftxFundingRate /** rageFundingRate */] = await Promise.all([
+    //   ftx.getCurrentFundingRate(),
+    //   rageTrade.getCurrentFundingRate(),
+    // ])
 
-    ftxAccountMarketValue = await ftx.queryFtxMargin()
+    ftxAccountMarketValue = 10000
     rageAccountMarketValue = await rageTrade.getRageMarketValue()
 
-    const totalTradesOnFtx = await ftx.getTotalTrades(
-      Math.floor(Date.now() / 1000) - 15 * 60,
-      Math.floor(Date.now() / 1000)
-    )
+    // const totalTradesOnFtx = await ftx.getTotalTrades(
+    //   Math.floor(Date.now() / 1000) - 15 * 60,
+    //   Math.floor(Date.now() / 1000)
+    // )
 
     const data = {
-      ftxFundingRate: ftxFundingRate,
+      // ftxFundingRate: ftxFundingRate,
       // rageFundingRate: rageFundingRate,
-      ftxAccountMarketValue: ftxAccountMarketValue,
+      // ftxAccountMarketValue: ftxAccountMarketValue,
       rageAccountMarketValue: rageAccountMarketValue,
       previousMarketValueSum: lastRecordedAccountMarketValueSum,
-      currentMarketValueSum: ftxAccountMarketValue + rageAccountMarketValue,
-      changeInSumOfMarketValue:
-        ftxAccountMarketValue +
-        rageAccountMarketValue -
-        lastRecordedAccountMarketValueSum,
+      // currentMarketValueSum: ftxAccountMarketValue + rageAccountMarketValue,
+      // changeInSumOfMarketValue:
+      //   ftxAccountMarketValue +
+      //   rageAccountMarketValue -
+      //   lastRecordedAccountMarketValueSum,
       currentEthBalance: currentEthBal,
       previousEthBalance: lastEthBal,
       changeInEthBalance: currentEthBal - lastEthBal,
       totalTradesAttemptedOnRage: totalTrades,
       totalTradesRevertedOnRage: totalRevesedTrades,
-      totalTradesOnFtx: totalTradesOnFtx,
+      // totalTradesOnFtx: totalTradesOnFtx,
     }
 
-    if (
-      data.changeInSumOfMarketValue * -1 >
-      0.01 * data.currentMarketValueSum
-    ) {
-      log(
-        `${BOT_WATCHER_ROLE} market value decreased by more than 1%`,
-        'ARB_BOT'
-      )
-    }
+    // if (
+    //   data.changeInSumOfMarketValue * -1 >
+    //   0.01 * data.currentMarketValueSum
+    // ) {
+    //   log(
+    //     `${BOT_WATCHER_ROLE} market value decreased by more than 1%`,
+    //     'ARB_BOT'
+    //   )
+    // }
 
     log(JSON.stringify(data), 'ARB_BOT')
     console.log(JSON.stringify(data))
@@ -162,7 +162,7 @@ const main = async () => {
       pFinal
     )
 
-    const ftxMargin = await ftx.queryFtxMargin()
+    const ftxMargin = 10000 // temp
     const updatedArbSize = await rageTrade.calculateMaxTradeSize(
       ftxMargin,
       pFtx,
