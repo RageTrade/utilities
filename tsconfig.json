@@ -11,7 +11,8 @@
     "keeper-liquidation/**/*",
     "scripts/**/*",
     "vault-rebalance/**/*",
-    "mock-oracles"
+    "mock-oracles",
+    "jit-keeper"
   ],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

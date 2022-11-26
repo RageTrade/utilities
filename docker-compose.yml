@@ -24,3 +24,7 @@ services:
     build:
       context: .
       target: dn-rebalance
+  jit-keeper:
+    build:
+      context: .
+      target: jit-keeper

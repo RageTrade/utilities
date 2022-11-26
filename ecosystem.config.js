@@ -63,4 +63,12 @@ module.exports = [
     combine_logs: true,
     merge_logs: true,
   },
+  {
+    script: 'dist/jit-keeper/index.js',
+    name: 'jit-keeper',
+    out_file: '.pm2/logs/output.log',
+    error_file: '.pm2/logs/error.log',
+    combine_logs: true,
+    merge_logs: true,
+  },
 ]
