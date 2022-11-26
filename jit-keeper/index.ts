@@ -43,7 +43,7 @@ const swap = async (dnGmxJIT: DnGmxJIT) => {
   await log(`payload: ${payload}`, 'DN_GMX_JIT')
 
   const response = await (await fetch(payload)).json()
-  await log(`response: ${response.toString()}`, 'DN_GMX_JIT')
+  await log(`response: ${JSON.stringify(response)}`, 'DN_GMX_JIT')
 
   const tx = await dnGmxJIT.swapWbtc(response.tx.to, response.tx.data)
   await tx.wait()
