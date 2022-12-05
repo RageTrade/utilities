@@ -551,10 +551,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-3.4.2-solc-0.7.tgz#38f4dbab672631034076ccdf2f3201fab1726635"
   integrity sha512-W6QmqgkADuFcTLzHL8vVoNBtkwjvQRpYIAom7KiUNoLKghyx3FgH0GBjt8NRvigV1ZmMOBllvE1By1C+bi8WpA==
 
-"@ragetrade/sdk@^1.0.0-alpha.47":
-  version "1.0.0-alpha.47"
-  resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-1.0.0-alpha.47.tgz#e1e698aa1ca4a023b0ea2688e82bb922dd1746fd"
-  integrity sha512-3el0zlIZCwxrJrHvSfqR5/W8fikVYzwlPSGtQUTiXED24R30GOCig6JyEcfn+BL9z+NyCqfy1TgscA84X4y3yg==
+"@ragetrade/sdk@^1.0.0-alpha.50":
+  version "1.0.0-alpha.50"
+  resolved "https://registry.yarnpkg.com/@ragetrade/sdk/-/sdk-1.0.0-alpha.50.tgz#d2edbb3df60bdf6d7d95c91f9467bf04b87b3c71"
+  integrity sha512-dLNPOsLqCSLmmgWTynmrwUK8/v3AEfOt4CS1Oa+WjsDq/McnCDMa1ozLZjl8RD0o+vL635mZgtUU80BQcUB52A==
   dependencies:
     "@uniswap/v3-sdk" "^3.8.2"
     ethers-repl "^1.0.3"

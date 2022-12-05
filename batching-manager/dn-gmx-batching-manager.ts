@@ -22,24 +22,29 @@ const executeBatch = async (bm: DnGmxBatchingManager) => {
     const tx1 = await bm.executeBatchStake()
     await tx1.wait()
 
+    console.log('stake success')
     log(
       `usdc converted to staked glp, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx1.hash}`,
       'BATCHING_MANAGER'
     )
   } catch (e: any) {
+    console.log('from stake', e)
     log(`failed fees harvesting, ${e.body}, ${e.message}`, 'BATCHING_MANAGER')
   }
 
-  try {
-    const tx1 = await bm.executeBatchDeposit()
-    await tx1.wait()
-    await sleep(16 * 60 * 1000)
+  await sleep(20 * 60 * 1000)
 
+  try {
+    const tx1 = await bm.executeBatchDeposit(0)
+    await tx1.wait()
+
+    console.log('batch success')
     log(
       `staked glp batch executed and converted to shares, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx1.hash}`,
       'BATCHING_MANAGER'
     )
   } catch (e: any) {
+    console.log('from batch', e)
     log(`failed pausing, ${e.body}, ${e.message}`, 'BATCHING_MANAGER')
   }
 }
