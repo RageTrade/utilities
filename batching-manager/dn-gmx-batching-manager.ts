@@ -1,11 +1,12 @@
 import cron from 'node-cron'
 
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 
 import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config-env'
 
 import { deltaNeutralGmxVaults, DnGmxBatchingManager } from '@ragetrade/sdk'
+import { parseEther } from 'ethers/lib/utils'
 
 let dnGmxBatchingManager: DnGmxBatchingManager
 
@@ -16,6 +17,8 @@ const provider = new ethers.providers.StaticJsonRpcProvider(
 const signer = new ethers.Wallet(NETWORK_INF0.PK_DN_BATCHING_MANAGER, provider)
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+const GLP_CONVERSION_THRESHOLD = parseEther('135000')
 
 const executeBatch = async (bm: DnGmxBatchingManager) => {
   try {
@@ -35,7 +38,14 @@ const executeBatch = async (bm: DnGmxBatchingManager) => {
   await sleep(20 * 60 * 1000)
 
   try {
-    const tx1 = await bm.executeBatchDeposit(0)
+    let conversionAmount
+    const glpAmount = await dnGmxBatchingManager.roundGlpDepositPending()
+
+    glpAmount.gt(GLP_CONVERSION_THRESHOLD)
+      ? (conversionAmount = GLP_CONVERSION_THRESHOLD)
+      : (conversionAmount = glpAmount)
+
+    const tx1 = await bm.executeBatchDeposit(conversionAmount)
     await tx1.wait()
 
     console.log('batch success')
