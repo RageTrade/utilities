@@ -22,7 +22,7 @@
     "uuid": "^9.0.0"
   },
   "dependencies": {
-    "@ragetrade/sdk": "^1.0.0-alpha.50",
+    "@ragetrade/sdk": "^1.0.0-alpha.53",
     "@uniswap/v3-sdk": "^3.9.0",
     "cross-fetch": "^3.1.5",
     "ethers": "^5.7.1",
