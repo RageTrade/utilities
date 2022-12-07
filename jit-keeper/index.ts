@@ -103,7 +103,7 @@ const swapWethToUsdc = async (dnGmxJIT: JITManager) => {
     signer
   )
 
-  cron.schedule('*/10 * * * *', async () => {
+  cron.schedule('*/3 * * * *', async () => {
     await swapWbtcToWeth(jitManager1)
     await swapWethToUsdc(jitManager2)
   })
