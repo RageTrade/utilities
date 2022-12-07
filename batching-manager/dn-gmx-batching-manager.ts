@@ -5,9 +5,15 @@ import { BigNumber, ethers } from 'ethers'
 import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config-env'
 
-import { deltaNeutralGmxVaults, DnGmxBatchingManager } from '@ragetrade/sdk'
 import { parseEther } from 'ethers/lib/utils'
+import {
+  deltaNeutralGmxJIT,
+  deltaNeutralGmxVaults,
+  DnGmxBatchingManager,
+  DnGmxRouter,
+} from '@ragetrade/sdk'
 
+let dnGmxRouter: DnGmxRouter
 let dnGmxBatchingManager: DnGmxBatchingManager
 
 const provider = new ethers.providers.StaticJsonRpcProvider(
@@ -20,9 +26,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const GLP_CONVERSION_THRESHOLD = parseEther('135000')
 
-const executeBatch = async (bm: DnGmxBatchingManager) => {
+const executeBatch = async (router: DnGmxRouter, bm: DnGmxBatchingManager) => {
   try {
-    const tx1 = await bm.executeBatchStake()
+    const tx1 = await router.executeBatchStake()
     await tx1.wait()
 
     console.log('stake success')
@@ -45,7 +51,7 @@ const executeBatch = async (bm: DnGmxBatchingManager) => {
       ? (conversionAmount = GLP_CONVERSION_THRESHOLD)
       : (conversionAmount = glpAmount)
 
-    const tx1 = await bm.executeBatchDeposit(conversionAmount)
+    const tx1 = await router.executeBatchDeposit(conversionAmount)
     await tx1.wait()
 
     console.log('batch success')
@@ -60,9 +66,10 @@ const executeBatch = async (bm: DnGmxBatchingManager) => {
 }
 
 ;(async () => {
+  ;({ dnGmxRouter } = await deltaNeutralGmxJIT.getContracts(signer))
   ;({ dnGmxBatchingManager } = await deltaNeutralGmxVaults.getContracts(signer))
   cron.schedule('0 */2 * * *', () => {
-    executeBatch(dnGmxBatchingManager)
+    executeBatch(dnGmxRouter, dnGmxBatchingManager)
       .then(() => console.log('RUN COMPLETE!'))
       .catch((error) => {
         console.error(error)
