@@ -124,7 +124,8 @@ export default class Ftx {
   }
 
   async queryFtxMargin() {
-    const margin = (await this.ftxClient.getAccount()).result.totalAccountValue
+    // const margin = (await this.ftxClient.getAccount()).result.totalAccountValue
+    const margin = 20_000
     return this._scaleUp(margin)
   }
 
