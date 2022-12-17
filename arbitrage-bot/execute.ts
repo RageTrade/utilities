@@ -162,7 +162,7 @@ const main = async () => {
       pFinal
     )
 
-    const ftxMargin = 10000 // temp
+    const ftxMargin = 20_000 // temp
     const updatedArbSize = await rageTrade.calculateMaxTradeSize(
       ftxMargin,
       pFtx,
