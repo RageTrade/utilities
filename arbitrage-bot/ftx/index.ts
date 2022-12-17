@@ -119,8 +119,8 @@ export default class Ftx {
     // return ((await this.ftxClient.getFuture(this.marketId)) as any).result!
     //   .mark! as number
 
-    const price = Number((await (await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT')).json()).price)
-    return price
+    const price = Number((await (await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')).json()).ethereum.usd)
+    return price.toFixed(4)
   }
 
   async queryFtxMargin() {
