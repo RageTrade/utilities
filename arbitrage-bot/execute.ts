@@ -53,7 +53,9 @@ const main = async () => {
   const rageFee = AMM_CONFIG.FEE
 
   let pFtx = await ftx.queryFtxPrice()
+  console.log({ pFtx })
   let pRage = await rageTrade.queryRagePrice()
+  console.log({ pRage })
 
   const logState = async () => {
     currentEthBal = (await rageTrade.getEthBalanceAndNonce()).ethBal
@@ -144,10 +146,12 @@ const main = async () => {
 
   /** checks for arb and if found, executes the arb */
   const arbitrage = async () => {
+    console.log('-- arbitrage')
     pFtx = await ftx.queryFtxPrice()
     pRage = await rageTrade.queryRagePrice()
 
     const pFinal = calculateFinalPrice(pFtx, pRage, rageFee, ftxFee)
+    console.log({ pFinal })
 
     if (isMovementWithinSpread(pFtx, pRage, pFinal) == true) {
       await log(
@@ -161,6 +165,7 @@ const main = async () => {
       pRage,
       pFinal
     )
+    console.log({ potentialArbSize })
 
     const ftxMargin = 20_000 // temp
     const updatedArbSize = await rageTrade.calculateMaxTradeSize(
@@ -214,7 +219,6 @@ const main = async () => {
         //   ragePrice: ragePrice,
         //   pFinal: pFinal,
         // })
-
         // console.log(data)
         // log(data, 'ARB_BOT')
       }
