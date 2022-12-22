@@ -120,7 +120,7 @@ export default class Ftx {
     //   .mark! as number
 
     const price = Number((await (await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')).json()).ethereum.usd)
-    return price.toFixed(4)
+    return price
   }
 
   async queryFtxMargin() {
