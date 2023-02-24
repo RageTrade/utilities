@@ -1,6 +1,6 @@
 import cron from 'node-cron'
 
-import { BigNumber, ethers } from 'ethers'
+import { ethers } from 'ethers'
 
 import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config-env'
@@ -72,4 +72,5 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
         process.exit(1)
       })
   })
+
 })().catch((e) => console.log(e))
