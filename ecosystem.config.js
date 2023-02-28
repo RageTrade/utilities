@@ -48,8 +48,16 @@ module.exports = [
     merge_logs: true,
   },
   {
-    script: 'dist/batching-manager/dn-gmx-batching-manager.js',
-    name: 'dn-gmx-batching-manager',
+    script: 'dist/batching-manager/usdc-batching-manager.js',
+    name: 'usdc-batching-manager',
+    out_file: '.pm2/logs/output.log',
+    error_file: '.pm2/logs/error.log',
+    combine_logs: true,
+    merge_logs: true,
+  },
+  {
+    script: 'dist/batching-manager/glp-batching-manager.js',
+    name: 'glp-batching-manager',
     out_file: '.pm2/logs/output.log',
     error_file: '.pm2/logs/error.log',
     combine_logs: true,
@@ -58,6 +66,14 @@ module.exports = [
   {
     script: 'dist/vault-rebalance/dn.js',
     name: 'dn-rebalance',
+    out_file: '.pm2/logs/output.log',
+    error_file: '.pm2/logs/error.log',
+    combine_logs: true,
+    merge_logs: true,
+  },
+    {
+    script: 'dist/hedge-strategy/index.js',
+    name: 'hedge-strategy',
     out_file: '.pm2/logs/output.log',
     error_file: '.pm2/logs/error.log',
     combine_logs: true,

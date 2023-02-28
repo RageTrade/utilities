@@ -16,14 +16,22 @@ services:
     build:
       context: .
       target: keeper-liquidation
-  dn-gmx-batching-manager:
+  usdc-batching-manager:
     build:
       context: .
-      target: dn-gmx-batching-manager
+      target: usdc-batching-manager
+  glp-batching-manager:
+    build:
+      context: .
+      target: glp-batching-manager
   dn-rebalance:
     build:
       context: .
       target: dn-rebalance
+  hedge-strategy:
+    build:
+      context: .
+      target: hedge-strategy
   jit-keeper:
     build:
       context: .
