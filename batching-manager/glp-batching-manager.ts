@@ -15,14 +15,14 @@ const provider = new ethers.providers.StaticJsonRpcProvider(
 )
 
 const signer = new ethers.Wallet(
-  NETWORK_INF0.PK_USDC_BATCHING_MANAGER,
+  NETWORK_INF0.PK_GLP_BATCHING_MANAGER,
   provider
 )
 
-const GLP_CONVERSION_THRESHOLD = parseUnits('50000', 18)
+const GLP_CONVERSION_THRESHOLD = parseUnits('20000', 18)
 
-const BATCH_WAIT_INTERVAL = '0 */3 * * *' // in cron format
-const CHUNK_WAIT_INTERVAL = 5 * 60 * 1000 // in ms
+const BATCH_WAIT_INTERVAL = '*/15 * * * *' // in cron format
+const CHUNK_WAIT_INTERVAL = 45 * 1000 // in ms
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -30,24 +30,26 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
   let bal = await batchingManager.roundAssetBalance()
 
   if (bal.eq(0)) {
-    log('no glp to execute batch, skipping...', 'BATCHING_MANAGER')
+    log('no glp to execute batch, skipping...', 'GLP_BATCHING_MANAGER')
     return
   }
 
   while (bal.gt(0)) {
     try {
-      const tx = await batchingManager.executeBatch(GLP_CONVERSION_THRESHOLD)
+      const tx = await batchingManager.executeBatch(GLP_CONVERSION_THRESHOLD, {
+        gasPrice: parseUnits("0.1", 9)
+      })
       await tx.wait()
 
       log(
         `${formatUnits(GLP_CONVERSION_THRESHOLD, 18)} glp converted, ${
           NETWORK_INF0.BLOCK_EXPLORER_URL
         }tx/${tx.hash}`,
-        'BATCHING_MANAGER'
+        'GLP_BATCHING_MANAGER'
       )
     } catch (e: any) {
       console.log('from execute batch', e)
-      log(`failed usdc conversion, ${e.body}, ${e.message}`, 'BATCHING_MANAGER')
+      log(`failed usdc conversion, ${e.body}, ${e.message}`, 'GLP_BATCHING_MANAGER')
     }
 
     bal = await batchingManager.roundAssetBalance()
@@ -65,7 +67,7 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
       .then(() => console.log('RUN COMPLETE!'))
       .catch((error) => {
         console.error(error)
-        log(error, 'BATCHING_MANAGER')
+        log(error, 'GLP_BATCHING_MANAGER')
         process.exit(1)
       })
   })

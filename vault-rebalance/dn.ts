@@ -10,7 +10,7 @@ import {
 
 import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config-env'
-import { hexZeroPad, parseEther } from 'ethers/lib/utils'
+import { hexZeroPad, parseEther, parseUnits } from 'ethers/lib/utils'
 import { ERC20 } from '@ragetrade/sdk/dist/typechain/core'
 
 let sGLP: ERC20
@@ -74,8 +74,17 @@ const rebalanceUnhedged = async () => {
 const rebalance = async () => {
   console.log('REBALANCE STARTED!')
 
+  const isValidRebalance = await dnGmxJuniorVault.isValidRebalance();
+
+  if(!isValidRebalance) {
+    log('not a valid rebalance', 'REBALANCE');
+    return;
+  }
+
   try {
-    const tx = await dnGmxJuniorVault.rebalance()
+    const tx = await dnGmxJuniorVault.rebalance({
+      gasPrice: parseUnits("0.1", 9)
+    })
     await tx.wait()
 
     log(
@@ -93,6 +102,6 @@ const rebalance = async () => {
   ;({ sGLP } = await getTokenContracts(signer))
   cron.schedule('*/30 * * * *', async () => {
     await rebalance()
-    await rebalanceUnhedged()
+    // await rebalanceUnhedged()
   })
 })().catch((e) => console.log(e))

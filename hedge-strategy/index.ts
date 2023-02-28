@@ -11,6 +11,7 @@ import {
   tokens,
   typechain,
 } from '@ragetrade/sdk'
+import { formatUnits, parseUnits } from 'ethers/lib/utils'
 
 const provider = new ethers.providers.StaticJsonRpcProvider(
   NETWORK_INF0.HTTP_RPC_URL
@@ -24,10 +25,10 @@ const signer = new ethers.Wallet(
 const MAX_BPS = BigNumber.from(10_000)
 const PRICE_PRECISION = BigNumber.from(10).pow(30)
 
-const MIN_PERSIST_TIME = 2 * 60 * 60
-const MIN_DELTA_DEVIATION = 500
+const MIN_PERSIST_TIME = 30 * 60
+const MIN_DELTA_DEVIATION = 200
 
-const UPDATE_HEDGE_WAIT_INTERVAL = '*/5 * * * *'
+const UPDATE_HEDGE_WAIT_INTERVAL = '*/1 * * * *'
 
 let wbtcAddress: string
 let wethAddress: string
@@ -37,8 +38,6 @@ let glpManager: typechain.deltaNeutralGmxVaults.IGlpManager
 let dnGmxTraderHedgeStrategy: typechain.deltaNeutralGmxVaults.DnGmxTraderHedgeStrategy
 
 let lastTimestamp = Math.floor(Date.now() / 1000)
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const calcCurrentTraderOIHedge = async () => {
   const wbtcTokenPrecision = BigNumber.from(10).pow(8)
@@ -122,10 +121,26 @@ const updateHedges = async () => {
 
   if (shouldUpdateTS) lastTimestamp = currentTimeStamp
 
+  const msg = {
+    lastBtcTraderOIHedge: formatUnits(lastBtcTraderOIHedge, 8),
+    lastEthTraderOIHedge: formatUnits(lastEthTraderOIHedge, 18),
+    wbtcHedgeAmount: formatUnits(wbtcHedgeAmount, 8),
+    wethHedgeAmount: formatUnits(wethHedgeAmount, 18),
+    wbtcDiff: formatUnits(wbtcDiff, 8),
+    wethDiff: formatUnits(wethDiff, 18),
+    lastTimestamp,
+    currentTimeStamp
+  }
+
+  const formatted = "```" + JSON.stringify(msg) + "```"
+  log(formatted, 'HEDGE_STRATEGY')
+
   if (!(lastTimestamp + MIN_PERSIST_TIME > currentTimeStamp)) return
 
   try {
-    const tx = await dnGmxTraderHedgeStrategy.setTraderOIHedges()
+    const tx = await dnGmxTraderHedgeStrategy.setTraderOIHedges({
+      gasPrice: parseUnits("0.1", 9)
+    })
     await tx.wait()
     lastTimestamp = currentTimeStamp
     log(

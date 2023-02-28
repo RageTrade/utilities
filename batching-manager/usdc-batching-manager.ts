@@ -19,10 +19,10 @@ const signer = new ethers.Wallet(
   provider
 )
 
-const USDC_CONVERSION_THRESHOLD = parseUnits('50000', 6)
+const USDC_CONVERSION_THRESHOLD = parseUnits('20000', 6)
 
-const BATCH_WAIT_INTERVAL = '0 */3 * * *' // in cron format
-const CHUNK_WAIT_INTERVAL = 5 * 60 * 1000 // in ms
+const BATCH_WAIT_INTERVAL = '*/15 * * * *' // in cron format
+const CHUNK_WAIT_INTERVAL = 45 * 1000 // in ms
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -30,24 +30,26 @@ const executeBatch = async (batchingManager: DnGmxBatchingManager) => {
   let bal = await batchingManager.roundUsdcBalance()
 
   if (bal.eq(0)) {
-    log('no usdc to execute batch, skipping...', 'BATCHING_MANAGER')
+    log('no usdc to execute batch, skipping...', 'USDC_BATCHING_MANAGER')
     return
   }
 
   while (bal.gt(0)) {
     try {
-      const tx = await batchingManager.executeBatch(USDC_CONVERSION_THRESHOLD)
+      const tx = await batchingManager.executeBatch(USDC_CONVERSION_THRESHOLD, {
+        gasPrice: parseUnits("0.1", 9)
+      })
       await tx.wait()
 
       log(
         `${formatUnits(USDC_CONVERSION_THRESHOLD, 6)} usdc converted, ${
           NETWORK_INF0.BLOCK_EXPLORER_URL
         }tx/${tx.hash}`,
-        'BATCHING_MANAGER'
+        'USDC_BATCHING_MANAGER'
       )
     } catch (e: any) {
       console.log('from execute batch', e)
-      log(`failed usdc conversion, ${e.body}, ${e.message}`, 'BATCHING_MANAGER')
+      log(`failed usdc conversion, ${e.body}, ${e.message}`, 'USDC_BATCHING_MANAGER')
     }
 
     bal = await batchingManager.roundUsdcBalance()
@@ -65,7 +67,7 @@ const executeBatch = async (batchingManager: DnGmxBatchingManager) => {
       .then(() => console.log('RUN COMPLETE!'))
       .catch((error) => {
         console.error(error)
-        log(error, 'BATCHING_MANAGER')
+        log(error, 'USDC_BATCHING_MANAGER')
         process.exit(1)
       })
   })
