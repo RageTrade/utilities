@@ -6,10 +6,7 @@ import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config-env'
 
 import { formatUnits, parseUnits } from 'ethers/lib/utils'
-import {
-  deltaNeutralGmxVaults,
-  DnGmxBatchingManager,
-} from '@ragetrade/sdk'
+import { deltaNeutralGmxVaults, DnGmxBatchingManager } from '@ragetrade/sdk'
 
 let usdcBatchingManager: DnGmxBatchingManager
 

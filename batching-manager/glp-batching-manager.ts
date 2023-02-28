@@ -6,10 +6,7 @@ import { log } from '../discord-logger'
 import { NETWORK_INF0 } from '../config-env'
 
 import { formatUnits, parseUnits } from 'ethers/lib/utils'
-import {
-  deltaNeutralGmxVaults,
-  DnGmxBatchingManagerGlp,
-} from '@ragetrade/sdk'
+import { deltaNeutralGmxVaults, DnGmxBatchingManagerGlp } from '@ragetrade/sdk'
 
 let glpBatchingManager: DnGmxBatchingManagerGlp
 
@@ -72,5 +69,4 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
         process.exit(1)
       })
   })
-
 })().catch((e) => console.log(e))

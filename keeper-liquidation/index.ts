@@ -15,25 +15,19 @@ let clearingHouse: ClearingHouse
 let clearingHouseLens: ClearingHouseLens
 
 const canLiquidate = async (accountId: number) => {
-  const {
-    marketValue,
-    requiredMargin,
-  } = await clearingHouse.getAccountMarketValueAndRequiredMargin(
-    accountId,
-    false
-  )
+  const { marketValue, requiredMargin } =
+    await clearingHouse.getAccountMarketValueAndRequiredMargin(accountId, false)
 
   console.log(requiredMargin.gt(marketValue), accountId)
   return requiredMargin.gt(marketValue)
 }
 
 const hasTraderPosition = async (accountId: number) => {
-  const {
-    netTraderPosition,
-  } = await clearingHouseLens.getAccountTokenPositionInfo(
-    accountId,
-    AMM_CONFIG.POOL_ID
-  )
+  const { netTraderPosition } =
+    await clearingHouseLens.getAccountTokenPositionInfo(
+      accountId,
+      AMM_CONFIG.POOL_ID
+    )
   return netTraderPosition && !netTraderPosition.eq(0)
 }
 
