@@ -18,15 +18,15 @@ const provider = new ethers.providers.StaticJsonRpcProvider(
 )
 
 const signer = new ethers.Wallet(
-  NETWORK_INF0.PK_USDC_BATCHING_MANAGER,
+  NETWORK_INF0.PK_HEDGE_STRATEGY,
   provider
 )
 
 const MAX_BPS = BigNumber.from(10_000)
 const PRICE_PRECISION = BigNumber.from(10).pow(30)
 
-const MIN_PERSIST_TIME = 30 * 60
-const MIN_DELTA_DEVIATION = 200
+const MIN_PERSIST_TIME = 2 * 60 * 60
+const MIN_DELTA_DEVIATION = 500
 
 const UPDATE_HEDGE_WAIT_INTERVAL = '*/1 * * * *'
 
@@ -135,7 +135,7 @@ const updateHedges = async () => {
   const formatted = "```" + JSON.stringify(msg) + "```"
   log(formatted, 'HEDGE_STRATEGY')
 
-  if (!(lastTimestamp + MIN_PERSIST_TIME > currentTimeStamp)) return
+  if (lastTimestamp + MIN_PERSIST_TIME > currentTimeStamp) return
 
   try {
     const tx = await dnGmxTraderHedgeStrategy.setTraderOIHedges({
@@ -144,11 +144,11 @@ const updateHedges = async () => {
     await tx.wait()
     lastTimestamp = currentTimeStamp
     log(
-      `hedges updated successfully, ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+      `hedges updated successfully, ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx.hash}`,
       'HEDGE_STRATEGY'
     )
   } catch (e) {
-    log(`updating hedges failed, ${e.body}, ${e.msg}`, 'HEDGE_STRATEGY')
+    log(`updating hedges failed, ${e}`, 'HEDGE_STRATEGY')
   }
 }
 
