@@ -106,6 +106,7 @@ const updateHedges = async () => {
           .mul(MIN_DELTA_DEVIATION)
           .mul(PRICE_PRECISION)
           .div(MAX_BPS)
+          .abs()
       ) ||
     wethDiff
       .mul(PRICE_PRECISION)
@@ -114,6 +115,7 @@ const updateHedges = async () => {
           .mul(MIN_DELTA_DEVIATION)
           .mul(PRICE_PRECISION)
           .div(MAX_BPS)
+          .abs()
       )
   )
 
