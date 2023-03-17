@@ -14,10 +14,7 @@ const provider = new ethers.providers.StaticJsonRpcProvider(
   NETWORK_INF0.HTTP_RPC_URL
 )
 
-const signer = new ethers.Wallet(
-  NETWORK_INF0.PK_GLP_BATCHING_MANAGER,
-  provider
-)
+const signer = new ethers.Wallet(NETWORK_INF0.PK_GLP_BATCHING_MANAGER, provider)
 
 const GLP_CONVERSION_THRESHOLD = parseUnits('50000', 18)
 
@@ -37,7 +34,7 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
   while (bal.gt(0)) {
     try {
       const tx = await batchingManager.executeBatch(GLP_CONVERSION_THRESHOLD, {
-        gasPrice: parseUnits("0.1", 9)
+        gasPrice: parseUnits('0.1', 9),
       })
       await tx.wait()
 
@@ -49,7 +46,10 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
       )
     } catch (e: any) {
       console.log('from execute batch', e)
-      log(`${BOT_WATCHER_ROLE} failed conversion, ${e.body}, ${e.message}`, 'GLP_BATCHING_MANAGER')
+      log(
+        `${BOT_WATCHER_ROLE} failed conversion, ${e.body}, ${e.message}`,
+        'GLP_BATCHING_MANAGER'
+      )
     }
 
     bal = await batchingManager.roundAssetBalance()

@@ -37,7 +37,7 @@ const executeBatch = async (batchingManager: DnGmxBatchingManager) => {
   while (bal.gt(0)) {
     try {
       const tx = await batchingManager.executeBatch(USDC_CONVERSION_THRESHOLD, {
-        gasPrice: parseUnits("0.1", 9)
+        gasPrice: parseUnits('0.1', 9),
       })
       await tx.wait()
 
@@ -49,7 +49,10 @@ const executeBatch = async (batchingManager: DnGmxBatchingManager) => {
       )
     } catch (e: any) {
       console.log('from execute batch', e)
-      log(`${BOT_WATCHER_ROLE} failed usdc conversion, ${e.body}, ${e.message}`, 'USDC_BATCHING_MANAGER')
+      log(
+        `${BOT_WATCHER_ROLE} failed usdc conversion, ${e.body}, ${e.message}`,
+        'USDC_BATCHING_MANAGER'
+      )
     }
 
     bal = await batchingManager.roundUsdcBalance()

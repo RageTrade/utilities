@@ -17,10 +17,7 @@ const provider = new ethers.providers.StaticJsonRpcProvider(
   NETWORK_INF0.HTTP_RPC_URL
 )
 
-const signer = new ethers.Wallet(
-  NETWORK_INF0.PK_HEDGE_STRATEGY,
-  provider
-)
+const signer = new ethers.Wallet(NETWORK_INF0.PK_HEDGE_STRATEGY, provider)
 
 const MAX_BPS = BigNumber.from(10_000)
 const PRICE_PRECISION = BigNumber.from(10).pow(30)
@@ -131,17 +128,17 @@ const updateHedges = async () => {
     wbtcDiff: formatUnits(wbtcDiff, 8),
     wethDiff: formatUnits(wethDiff, 18),
     lastTimestamp,
-    currentTimeStamp
+    currentTimeStamp,
   }
 
-  const formatted = "```" + JSON.stringify(msg) + "```"
+  const formatted = '```' + JSON.stringify(msg) + '```'
   log(formatted, 'HEDGE_STRATEGY')
 
   if (lastTimestamp + MIN_PERSIST_TIME > currentTimeStamp) return
 
   try {
     const tx = await dnGmxTraderHedgeStrategy.setTraderOIHedges({
-      gasPrice: parseUnits("0.1", 9)
+      gasPrice: parseUnits('0.1', 9),
     })
     await tx.wait()
     lastTimestamp = currentTimeStamp

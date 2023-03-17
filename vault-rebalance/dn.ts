@@ -1,10 +1,7 @@
 import cron from 'node-cron'
 
 import { ethers } from 'ethers'
-import {
-  deltaNeutralGmxVaults,
-  DnGmxJuniorVault,
-} from '@ragetrade/sdk'
+import { deltaNeutralGmxVaults, DnGmxJuniorVault } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
 import { BOT_WATCHER_ROLE, NETWORK_INF0 } from '../config-env'
@@ -20,16 +17,16 @@ const signer = new ethers.Wallet(NETWORK_INF0.PK_DN_VAULT_REBALANCE, provider)
 const rebalance = async () => {
   console.log('REBALANCE STARTED!')
 
-  const isValidRebalance = await dnGmxJuniorVault.isValidRebalance();
+  const isValidRebalance = await dnGmxJuniorVault.isValidRebalance()
 
-  if(!isValidRebalance) {
-    log('not a valid rebalance', 'REBALANCE');
-    return;
+  if (!isValidRebalance) {
+    log('not a valid rebalance', 'REBALANCE')
+    return
   }
 
   try {
     const tx = await dnGmxJuniorVault.rebalance({
-      gasPrice: parseUnits("0.1", 9)
+      gasPrice: parseUnits('0.1', 9),
     })
     await tx.wait()
 
@@ -38,12 +35,15 @@ const rebalance = async () => {
       'REBALANCE'
     )
   } catch (e: any) {
-    log(`${BOT_WATCHER_ROLE} failed rebalance, ${e.body}, ${e.message}`, 'REBALANCE')
+    log(
+      `${BOT_WATCHER_ROLE} failed rebalance, ${e.body}, ${e.message}`,
+      'REBALANCE'
+    )
   }
 }
 
 ;(async () => {
-  ;({ dnGmxJuniorVault} = await deltaNeutralGmxVaults.getContracts(signer))
+  ;({ dnGmxJuniorVault } = await deltaNeutralGmxVaults.getContracts(signer))
   cron.schedule('*/1 * * * *', async () => {
     await rebalance()
   })

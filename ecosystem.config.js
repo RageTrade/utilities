@@ -54,5 +54,5 @@ module.exports = [
     error_file: '.pm2/logs/error.log',
     combine_logs: true,
     merge_logs: true,
-  }
+  },
 ]
