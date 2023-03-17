@@ -19,10 +19,10 @@ const signer = new ethers.Wallet(
   provider
 )
 
-const GLP_CONVERSION_THRESHOLD = parseUnits('20000', 18)
+const GLP_CONVERSION_THRESHOLD = parseUnits('50000', 18)
 
 const BATCH_WAIT_INTERVAL = '*/15 * * * *' // in cron format
-const CHUNK_WAIT_INTERVAL = 45 * 1000 // in ms
+const CHUNK_WAIT_INTERVAL = 60 * 1000 // in ms
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
