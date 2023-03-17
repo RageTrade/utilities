@@ -14,6 +14,10 @@ import {
 let clearingHouse: ClearingHouse
 let clearingHouseLens: ClearingHouseLens
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 const canLiquidate = async (accountId: number) => {
   const { marketValue, requiredMargin } =
     await clearingHouse.getAccountMarketValueAndRequiredMargin(accountId, false)
@@ -64,27 +68,37 @@ const liquidate = async () => {
   const lastAccount = (await clearingHouse.numAccounts()).sub(1).toNumber()
 
   for (let id = 0; id <= lastAccount; id++) {
-    if (await canLiquidate(id)) {
-      await log(`account # ${id} is underwater, liquidating...`, 'LIQUIDATION')
-      const hasTradPos = await hasTraderPosition(id)
-      const hasLiqPos = await hasLiquiditiyPosition(id)
+    await sleep(6)
 
-      if (hasLiqPos) {
-        const tx = await liquidateLiquidityPosition(id)
+    try {
+      if (await canLiquidate(id)) {
         await log(
-          `liquidity position of account # ${id} liquidated!
-            ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+          `account # ${id} is underwater, liquidating...`,
           'LIQUIDATION'
         )
-      }
-      if (hasTradPos) {
-        const tx = await liquidateTraderPosition(id)
-        await log(
-          `trader position of account # ${id} liquidated!,
+        const hasTradPos = await hasTraderPosition(id)
+        const hasLiqPos = await hasLiquiditiyPosition(id)
+
+        if (hasLiqPos) {
+          const tx = await liquidateLiquidityPosition(id)
+          await log(
+            `liquidity position of account # ${id} liquidated!
             ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
-          'LIQUIDATION'
-        )
+            'LIQUIDATION'
+          )
+        }
+        if (hasTradPos) {
+          const tx = await liquidateTraderPosition(id)
+          await log(
+            `trader position of account # ${id} liquidated!,
+            ${NETWORK_INF0.BLOCK_EXPLORER_URL}/tx/${tx}`,
+            'LIQUIDATION'
+          )
+        }
       }
+    } catch (e) {
+      console.log('e:', e)
+      continue
     }
   }
 }
@@ -99,12 +113,12 @@ const liquidate = async () => {
 
   ;({ clearingHouse, clearingHouseLens } = await getCoreContracts(signer))
 
-  cron.schedule('*/3 * * * *', () => {
-    liquidate()
-      .then(() => console.log('RUN COMPLETE!'))
-      .catch((error) => {
-        console.error(error)
-        process.exit(1)
-      })
-  })
+  while (true) {
+    await liquidate().catch((error) => {
+      console.error(error)
+      process.exit(1)
+    })
+
+    console.log('RUN COMPLETE')
+  }
 })().catch((e) => console.log(e))
