@@ -4,14 +4,6 @@ services:
     build:
       context: .
       target: vault-rebalance
-  vault-rebalance-gmx:
-    build:
-      context: .
-      target: vault-rebalance-gmx
-  batching-manager:
-    build:
-      context: .
-      target: batching-manager
   keeper-liquidation:
     build:
       context: .
@@ -32,7 +24,3 @@ services:
     build:
       context: .
       target: hedge-strategy
-  jit-keeper:
-    build:
-      context: .
-      target: jit-keeper
