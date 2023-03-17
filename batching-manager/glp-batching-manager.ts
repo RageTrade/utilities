@@ -3,7 +3,7 @@ import cron from 'node-cron'
 import { ethers } from 'ethers'
 
 import { log } from '../discord-logger'
-import { NETWORK_INF0 } from '../config-env'
+import { NETWORK_INF0, BOT_WATCHER_ROLE } from '../config-env'
 
 import { formatUnits, parseUnits } from 'ethers/lib/utils'
 import { deltaNeutralGmxVaults, DnGmxBatchingManagerGlp } from '@ragetrade/sdk'
@@ -49,7 +49,7 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
       )
     } catch (e: any) {
       console.log('from execute batch', e)
-      log(`failed usdc conversion, ${e.body}, ${e.message}`, 'GLP_BATCHING_MANAGER')
+      log(`${BOT_WATCHER_ROLE} failed conversion, ${e.body}, ${e.message}`, 'GLP_BATCHING_MANAGER')
     }
 
     bal = await batchingManager.roundAssetBalance()
@@ -67,7 +67,7 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
       .then(() => console.log('RUN COMPLETE!'))
       .catch((error) => {
         console.error(error)
-        log(error, 'GLP_BATCHING_MANAGER')
+        log(`${BOT_WATCHER_ROLE} ${error}`, 'GLP_BATCHING_MANAGER')
         process.exit(1)
       })
   })

@@ -3,7 +3,7 @@ import cron from 'node-cron'
 import { BigNumber, ethers } from 'ethers'
 
 import { log } from '../discord-logger'
-import { NETWORK_INF0 } from '../config-env'
+import { BOT_WATCHER_ROLE, NETWORK_INF0 } from '../config-env'
 
 import {
   deltaNeutralGmxVaults,
@@ -150,7 +150,7 @@ const updateHedges = async () => {
       'HEDGE_STRATEGY'
     )
   } catch (e) {
-    log(`updating hedges failed, ${e}`, 'HEDGE_STRATEGY')
+    log(`${BOT_WATCHER_ROLE} updating hedges failed, ${e}`, 'HEDGE_STRATEGY')
   }
 }
 
@@ -166,7 +166,7 @@ const updateHedges = async () => {
       .then(() => console.log('RUN COMPLETE!'))
       .catch((error) => {
         console.error(error)
-        log(error, 'BATCHING_MANAGER')
+        log(`${BOT_WATCHER_ROLE} ${error}`, 'BATCHING_MANAGER')
         process.exit(1)
       })
   })

@@ -7,7 +7,7 @@ import {
 } from '@ragetrade/sdk'
 
 import { log } from '../discord-logger'
-import { NETWORK_INF0 } from '../config-env'
+import { BOT_WATCHER_ROLE, NETWORK_INF0 } from '../config-env'
 import { parseUnits } from 'ethers/lib/utils'
 
 let dnGmxJuniorVault: DnGmxJuniorVault
@@ -38,7 +38,7 @@ const rebalance = async () => {
       'REBALANCE'
     )
   } catch (e: any) {
-    log(`failed rebalance, ${e.body}, ${e.message}`, 'REBALANCE')
+    log(`${BOT_WATCHER_ROLE} failed rebalance, ${e.body}, ${e.message}`, 'REBALANCE')
   }
 }
 
