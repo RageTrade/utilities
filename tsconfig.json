@@ -12,7 +12,8 @@
     "scripts/**/*",
     "vault-rebalance/**/*",
     "mock-oracles",
-    "jit-keeper"
+    "jit-keeper",
+    "hedge-strategy"
   ],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }
