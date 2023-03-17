@@ -27,7 +27,6 @@ const executeBatch = async (batchingManager: DnGmxBatchingManagerGlp) => {
   let bal = await batchingManager.roundAssetBalance()
 
   if (bal.eq(0)) {
-    log('no glp to execute batch, skipping...', 'GLP_BATCHING_MANAGER')
     return
   }
 

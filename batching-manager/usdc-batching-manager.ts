@@ -30,7 +30,6 @@ const executeBatch = async (batchingManager: DnGmxBatchingManager) => {
   let bal = await batchingManager.roundUsdcBalance()
 
   if (bal.eq(0)) {
-    log('no usdc to execute batch, skipping...', 'USDC_BATCHING_MANAGER')
     return
   }
 

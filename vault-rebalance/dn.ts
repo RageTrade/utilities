@@ -20,7 +20,6 @@ const rebalance = async () => {
   const isValidRebalance = await dnGmxJuniorVault.isValidRebalance()
 
   if (!isValidRebalance) {
-    log('not a valid rebalance', 'REBALANCE')
     return
   }
 
