@@ -1,38 +1,32 @@
 version: '3.4'
 services:
   vault-rebalance:
-    restart_policy:
-      condition: on-failure
+    restart_policy: on-failure
     build:
       context: .
       target: vault-rebalance
   keeper-liquidation:
-    restart_policy:
-      condition: on-failure
+    restart_policy: on-failure
     build:
       context: .
       target: keeper-liquidation
   usdc-batching-manager:
-    restart_policy:
-      condition: on-failure
+    restart_policy: on-failure
     build:
       context: .
       target: usdc-batching-manager
   glp-batching-manager:
-    restart_policy:
-      condition: on-failure
+    restart_policy: on-failure
     build:
       context: .
       target: glp-batching-manager
   dn-rebalance:
-    restart_policy:
-      condition: on-failure
+    restart_policy: on-failure
     build:
       context: .
       target: dn-rebalance
   hedge-strategy:
-    restart_policy:
-      condition: on-failure
+    restart_policy: on-failure
     build:
       context: .
       target: hedge-strategy
