@@ -31,12 +31,12 @@ const rebalance = async () => {
 
     log(
       `rebalanced, ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx.hash}`,
-      'REBALANCE'
+      'REBALANCE_DN'
     )
   } catch (e: any) {
     log(
       `${BOT_WATCHER_ROLE} failed rebalance, ${e.body}, ${e.message}`,
-      'REBALANCE'
+      'REBALANCE_DN'
     )
   }
 }

@@ -39,21 +39,21 @@ const rebalance = async () => {
 
     await log(
       `rebalanced! ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx.hash}`,
-      'REBALANCE'
+      'REBALANCE_80_20'
     )
 
     for (const each of receipt.logs) {
       if (each.topics[0] == TOKEN_POSITION_CLOSED) {
         await log(
           `${BOT_WATCHER_ROLE} reset happend internally during rebalance`,
-          'REBALANCE'
+          'REBALANCE_80_20'
         )
       }
     }
   } else {
     await log(
       'not a valid rebalance condition, skipping rebalance...',
-      'REBALANCE'
+      'REBALANCE_80_20'
     )
   }
 
@@ -69,11 +69,11 @@ const closeTokenPosition = async () => {
 
   await log(
     `${BOT_WATCHER_ROLE} token position closed! ${NETWORK_INF0.BLOCK_EXPLORER_URL}tx/${tx.hash}`,
-    'REBALANCE'
+    'REBALANCE_80_20'
   )
 
   isReset = await vault.isReset()
-  await log(`updated reset value is ${isReset} `, 'REBALANCE')
+  await log(`updated reset value is ${isReset} `, 'REBALANCE_80_20')
 }
 
 cron.schedule(CRON_REBALANCE, async () => {
